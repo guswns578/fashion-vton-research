@@ -1,0 +1,425 @@
+{
+  "last_node_id": 9,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        300,
+        420
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1,
+            5
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "idm_sample_human.jpg",
+        "image"
+      ],
+      "title": "Person"
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        480
+      ],
+      "size": [
+        300,
+        420
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            6
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "idm_sample_garment.jpg",
+        "image"
+      ],
+      "title": "Garment"
+    },
+    {
+      "id": 3,
+      "type": "IDMPreprocess12GB",
+      "pos": [
+        360,
+        0
+      ],
+      "size": [
+        320,
+        180
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "human",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "densepose",
+          "type": "IMAGE",
+          "links": [
+            2,
+            7
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "clothing_mask",
+          "type": "MASK",
+          "links": [
+            3,
+            8
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IDMPreprocess12GB"
+      },
+      "widgets_values": [
+        "shirt",
+        0.3,
+        12
+      ]
+    },
+    {
+      "id": 4,
+      "type": "PreviewImage",
+      "pos": [
+        730,
+        0
+      ],
+      "size": [
+        300,
+        380
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 2
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": [],
+      "title": "DensePose preview"
+    },
+    {
+      "id": 5,
+      "type": "MaskToImage",
+      "pos": [
+        370,
+        280
+      ],
+      "size": [
+        320,
+        180
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            4
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 6,
+      "type": "PreviewImage",
+      "pos": [
+        730,
+        430
+      ],
+      "size": [
+        300,
+        380
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": [],
+      "title": "White = replace clothing"
+    },
+    {
+      "id": 7,
+      "type": "IDMInference12GB",
+      "pos": [
+        1090,
+        0
+      ],
+      "size": [
+        340,
+        350
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "human",
+          "type": "IMAGE",
+          "link": 5
+        },
+        {
+          "name": "garment",
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "densepose",
+          "type": "IMAGE",
+          "link": 7
+        },
+        {
+          "name": "clothing_mask",
+          "type": "MASK",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            9
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "IDMInference12GB"
+      },
+      "widgets_values": [
+        "a blue short-sleeved velvet wrap top",
+        384,
+        512,
+        20,
+        42,
+        "fixed"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "SaveImage",
+      "pos": [
+        1500,
+        0
+      ],
+      "size": [
+        400,
+        520
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "IDM-VTON/tryon"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "Note",
+      "pos": [
+        1090,
+        440
+      ],
+      "size": [
+        350,
+        260
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "Note"
+      },
+      "widgets_values": [
+        "12GB setup: FP16 + sequential CPU offload; batch 1.\nStart with 384 x 512, 20 steps.\nPreview the mask first. White areas are regenerated.\nFor new sleeves or a larger garment, expand the mask manually.\nThe first run loads models from disk and may take several minutes.\nThis workflow uses an isolated Python environment."
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      3,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      3,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      3,
+      3,
+      1,
+      5,
+      0,
+      "MASK"
+    ],
+    [
+      4,
+      5,
+      0,
+      6,
+      0,
+      "IMAGE"
+    ],
+    [
+      5,
+      1,
+      0,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      6,
+      2,
+      0,
+      7,
+      1,
+      "IMAGE"
+    ],
+    [
+      7,
+      3,
+      0,
+      7,
+      2,
+      "IMAGE"
+    ],
+    [
+      8,
+      3,
+      1,
+      7,
+      3,
+      "MASK"
+    ],
+    [
+      9,
+      7,
+      0,
+      8,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.65,
+      "offset": [
+        30,
+        40
+      ]
+    }
+  },
+  "version": 0.4
+}

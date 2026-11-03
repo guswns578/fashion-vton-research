@@ -1,0 +1,5 @@
+{
+  "python": "<repo>/comfyui_vton/work/runtime/Scripts/python.exe",
+  "runner": "<repo>/comfyui_vton/ComfyUI-IDM-VTON-12GB/runner.py",
+  "comfy": "C:/Dev/StabilityMatrix/Data/Packages/ComfyUI"
+}

@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.fashion-pipeline/geometry-pilot.schema.json",
+  "title": "Personalized VTON geometry pilot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pilot_id",
+    "consent",
+    "subject",
+    "garment",
+    "capture",
+    "geometry_outputs",
+    "evaluation"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "pilot_id": {"type": "string", "minLength": 1},
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_is_researcher", "body_scan", "image_generation", "commercial_research"],
+      "properties": {
+        "subject_is_researcher": {"type": "boolean"},
+        "body_scan": {"type": "boolean"},
+        "image_generation": {"type": "boolean"},
+        "commercial_research": {"type": "boolean"},
+        "record_path": {"type": ["string", "null"]}
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_id", "measurements_cm", "body_mesh"],
+      "properties": {
+        "subject_id": {"type": "string"},
+        "measurements_cm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["height", "neck", "shoulder_breadth", "chest", "waist", "hip", "arm_length", "upper_arm", "wrist", "back_waist_length"],
+          "properties": {
+            "height": {"type": ["number", "null"]},
+            "neck": {"type": ["number", "null"]},
+            "shoulder_breadth": {"type": ["number", "null"]},
+            "chest": {"type": ["number", "null"]},
+            "waist": {"type": ["number", "null"]},
+            "hip": {"type": ["number", "null"]},
+            "arm_length": {"type": ["number", "null"]},
+            "upper_arm": {"type": ["number", "null"]},
+            "wrist": {"type": ["number", "null"]},
+            "back_waist_length": {"type": ["number", "null"]}
+          }
+        },
+        "weight_kg": {"type": ["number", "null"]},
+        "body_mesh": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "format", "scale_unit", "pose"],
+          "properties": {
+            "path": {"type": ["string", "null"]},
+            "format": {"enum": ["obj", "fbx", "glb", "ply", "smpl", "smplx", null]},
+            "scale_unit": {"enum": ["m", "cm", "mm", null]},
+            "pose": {"enum": ["a_pose", "t_pose", "capture_pose", null]},
+            "alignment": {"enum": ["prealigned", "full-scan-bbox", null]}
+          }
+        }
+      }
+    },
+    "garment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["garment_id", "category", "measurements_cm", "material", "assets"],
+      "properties": {
+        "garment_id": {"type": "string"},
+        "category": {"enum": ["tops", "bottoms", "one-pieces"]},
+        "size_label": {"type": ["string", "null"]},
+        "measurements_cm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["shoulder", "chest_flat", "body_length", "sleeve_length", "upper_arm_flat", "cuff_flat", "hem_flat", "armhole"],
+          "properties": {
+            "shoulder": {"type": ["number", "null"]},
+            "chest_flat": {"type": ["number", "null"]},
+            "body_length": {"type": ["number", "null"]},
+            "sleeve_length": {"type": ["number", "null"]},
+            "upper_arm_flat": {"type": ["number", "null"]},
+            "cuff_flat": {"type": ["number", "null"]},
+            "hem_flat": {"type": ["number", "null"]},
+            "armhole": {"type": ["number", "null"]}
+          }
+        },
+        "material": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["composition", "mass_gsm", "thickness_mm", "stretch_warp_pct", "stretch_weft_pct", "bending_class", "surface_class"],
+          "properties": {
+            "composition": {"type": ["string", "null"]},
+            "garment_mass_g": {"type": ["number", "null"], "exclusiveMinimum": 0},
+            "mass_gsm": {"type": ["number", "null"]},
+            "thickness_mm": {"type": ["number", "null"]},
+            "stretch_warp_pct": {"type": ["number", "null"]},
+            "stretch_weft_pct": {"type": ["number", "null"]},
+            "bending_class": {"enum": ["very_soft", "soft", "medium", "stiff", "very_stiff", null]},
+            "surface_class": {"enum": ["matte", "semi_matte", "satin", "glossy", "metallic", null]}
+          }
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["flat_front", "flat_back", "detail_closeups", "pattern_or_mesh"],
+          "properties": {
+            "flat_front": {"type": ["string", "null"]},
+            "flat_back": {"type": ["string", "null"]},
+            "detail_closeups": {"type": "array", "items": {"type": "string"}},
+            "pattern_or_mesh": {"type": ["string", "null"]}
+          }
+        }
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calibration_image", "reference_pose_image", "worn_ground_truth_images"],
+      "properties": {
+        "calibration_image": {"type": ["string", "null"]},
+        "reference_pose_image": {"type": ["string", "null"]},
+        "worn_ground_truth_images": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "camera_distance_cm": {"type": ["number", "null"]},
+        "focal_length_35mm_eq": {"type": ["number", "null"]}
+        ,"camera_config": {"type": ["string", "null"]}
+      }
+    },
+    "geometry_outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["garment_silhouette", "depth", "normal", "uv_or_warp", "landmarks", "render_metadata"],
+      "properties": {
+        "garment_silhouette": {"type": ["string", "null"]},
+        "depth": {"type": ["string", "null"]},
+        "normal": {"type": ["string", "null"]},
+        "uv_or_warp": {"type": ["string", "null"]},
+        "landmarks": {"type": ["string", "null"]},
+        "render_metadata": {"type": ["string", "null"]}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["real_worn_mask", "real_worn_landmarks", "fashn_candidate_manifest"],
+      "properties": {
+        "real_worn_mask": {"type": ["string", "null"]},
+        "real_worn_landmarks": {"type": ["string", "null"]},
+        "fashn_candidate_manifest": {"type": ["string", "null"]},
+        "notes": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

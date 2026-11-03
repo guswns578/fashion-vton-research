@@ -1,0 +1,28 @@
+# weights, data, runtime (not distributed)
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.onnx
+fashion_pipeline/
+data/
+comfyui_vton/work/
+comfyui_vton/outputs/
+comfyui_vton/ComfyUI-IDM-VTON-12GB/config.json
+
+# generated images (public figures live in docs/images)
+*.png
+*.jpg
+*.jpeg
+!docs/images/*
+
+# python
+__pycache__/
+*.pyc
+.venv*/
+venv/
+
+# os
+Thumbs.db
+.DS_Store

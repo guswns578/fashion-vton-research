@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "pilot_id": "self_top_001",
+  "consent": {
+    "subject_is_researcher": true,
+    "body_scan": true,
+    "image_generation": true,
+    "commercial_research": true,
+    "record_path": null
+  },
+  "subject": {
+    "subject_id": "self_001",
+    "measurements_cm": {
+      "height": null,
+      "neck": null,
+      "shoulder_breadth": null,
+      "chest": null,
+      "waist": null,
+      "hip": null,
+      "arm_length": null,
+      "upper_arm": null,
+      "wrist": null,
+      "back_waist_length": null
+    },
+    "weight_kg": null,
+    "body_mesh": {
+      "path": null,
+      "format": null,
+      "scale_unit": null,
+      "pose": null,
+      "alignment": null
+    }
+  },
+  "garment": {
+    "garment_id": "top_001",
+    "category": "tops",
+    "size_label": null,
+    "measurements_cm": {
+      "shoulder": null,
+      "chest_flat": null,
+      "body_length": null,
+      "sleeve_length": null,
+      "upper_arm_flat": null,
+      "cuff_flat": null,
+      "hem_flat": null,
+      "armhole": null
+    },
+    "material": {
+      "composition": null,
+      "garment_mass_g": null,
+      "mass_gsm": null,
+      "thickness_mm": null,
+      "stretch_warp_pct": null,
+      "stretch_weft_pct": null,
+      "bending_class": null,
+      "surface_class": null
+    },
+    "assets": {
+      "flat_front": null,
+      "flat_back": null,
+      "detail_closeups": [],
+      "pattern_or_mesh": null
+    }
+  },
+  "capture": {
+    "calibration_image": null,
+    "reference_pose_image": null,
+    "worn_ground_truth_images": ["replace_with_same_pose_worn_photo.png"],
+    "camera_distance_cm": null,
+    "focal_length_35mm_eq": null,
+    "camera_config": null
+  },
+  "geometry_outputs": {
+    "garment_silhouette": null,
+    "depth": null,
+    "normal": null,
+    "uv_or_warp": null,
+    "landmarks": null,
+    "render_metadata": null
+  },
+  "evaluation": {
+    "real_worn_mask": null,
+    "real_worn_landmarks": null,
+    "fashn_candidate_manifest": null,
+    "notes": null
+  }
+}

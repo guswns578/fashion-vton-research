@@ -1,0 +1,10 @@
+{
+  "torch": "2.12.1+cu130",
+  "diffusers": "0.27.2",
+  "transformers": "4.40.2",
+  "huggingface_hub": "0.25.2",
+  "source_commits": {
+    "ComfyUI-IDM-VTON": "5a8334c58c390381e31a8023cb7ba398ade40b39",
+    "comfyui_segment_anything": "ab6395596399d5048639cdab7e44ec9fae857a93"
+  }
+}
