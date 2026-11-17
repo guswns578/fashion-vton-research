@@ -1,4 +1,5 @@
 """Validate Blender geometry-render outputs before using them as conditions."""
+
 from __future__ import annotations
 
 import argparse

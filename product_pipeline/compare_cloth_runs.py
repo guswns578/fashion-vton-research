@@ -1,4 +1,5 @@
 """Compare no-gravity and gravity cloth runs and reject static false positives."""
+
 from __future__ import annotations
 
 import argparse
@@ -33,8 +34,12 @@ def load_obj_vertices(path: Path) -> np.ndarray:
 def compare(control: Path, gravity: Path) -> dict:
     control_meta = json.loads((control / "simulation_metadata.json").read_text(encoding="utf-8"))
     gravity_meta = json.loads((gravity / "simulation_metadata.json").read_text(encoding="utf-8"))
-    control_render = json.loads((control / "render" / "render_validation.json").read_text(encoding="utf-8"))
-    gravity_render = json.loads((gravity / "render" / "render_validation.json").read_text(encoding="utf-8"))
+    control_render = json.loads(
+        (control / "render" / "render_validation.json").read_text(encoding="utf-8")
+    )
+    gravity_render = json.loads(
+        (gravity / "render" / "render_validation.json").read_text(encoding="utf-8")
+    )
     control_mask = load_mask(control / "render" / "garment_silhouette.png")
     gravity_mask = load_mask(gravity / "render" / "garment_silhouette.png")
     iou = mask_iou(control_mask, gravity_mask)

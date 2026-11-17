@@ -1,4 +1,5 @@
 """Audit realized GarmentCode pattern geometry against flat garment targets."""
+
 from __future__ import annotations
 
 import argparse
@@ -6,7 +7,6 @@ import json
 import math
 from pathlib import Path
 from typing import Iterable
-
 
 Point = tuple[float, float]
 
@@ -66,9 +66,11 @@ def edge_point(panel: dict, edge_index: int, t: float) -> Point:
             )
             start_angle = math.atan2(start[1] - center[1], start[0] - center[0])
             end_angle = math.atan2(end[1] - center[1], end[0] - center[0])
-            delta = (end_angle - start_angle) % (2.0 * math.pi) if direction > 0 else (
-                start_angle - end_angle
-            ) % (2.0 * math.pi)
+            delta = (
+                (end_angle - start_angle) % (2.0 * math.pi)
+                if direction > 0
+                else (start_angle - end_angle) % (2.0 * math.pi)
+            )
             if bool(delta > math.pi) == bool(large_arc):
                 chosen = center, start_angle, delta
                 break
@@ -235,7 +237,8 @@ def audit(spec_path: Path, targets: dict[str, float]) -> dict:
                 "stitch": index,
                 "sides": sides,
                 "mismatch_cm": mismatch,
-                "mismatch_ratio": mismatch / max(sides[0]["length_cm"], sides[1]["length_cm"], 1e-9),
+                "mismatch_ratio": mismatch
+                / max(sides[0]["length_cm"], sides[1]["length_cm"], 1e-9),
             }
         )
 

@@ -15,6 +15,7 @@ OpenCV's published same-identity threshold for SFace cosine is ~0.363, but the
 holdout baseline computed here is the honest yardstick for this specific person
 and image quality.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,9 +34,7 @@ def build(model_root: Path):
     det = cv2.FaceDetectorYN.create(
         str(model_root / "face_detection_yunet_2023mar.onnx"), "", (320, 320), 0.6, 0.3, 5000
     )
-    rec = cv2.FaceRecognizerSF.create(
-        str(model_root / "face_recognition_sface_2021dec.onnx"), ""
-    )
+    rec = cv2.FaceRecognizerSF.create(str(model_root / "face_recognition_sface_2021dec.onnx"), "")
     return det, rec
 
 
@@ -73,10 +72,20 @@ def collect(paths: list[Path], det, rec) -> dict[str, np.ndarray]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--generated", nargs="+", type=Path, required=True,
-                    help="generated image files or directories")
-    ap.add_argument("--holdout-jsonl", type=Path,
-                    default=Path(r"fashion_pipeline/dataset/seller_identity_faces_50_v1/splits/group_40_10_v1/holdout.jsonl"))
+    ap.add_argument(
+        "--generated",
+        nargs="+",
+        type=Path,
+        required=True,
+        help="generated image files or directories",
+    )
+    ap.add_argument(
+        "--holdout-jsonl",
+        type=Path,
+        default=Path(
+            r"fashion_pipeline/dataset/seller_identity_faces_50_v1/splits/group_40_10_v1/holdout.jsonl"
+        ),
+    )
     ap.add_argument("--model-root", type=Path, default=MODEL_ROOT)
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
@@ -85,7 +94,8 @@ def main() -> None:
 
     hold_paths = [
         Path(json.loads(l)["selected_path"])
-        for l in args.holdout_jsonl.open(encoding="utf-8") if l.strip()
+        for l in args.holdout_jsonl.open(encoding="utf-8")
+        if l.strip()
     ]
     print(f"[holdout] {len(hold_paths)} real photos")
     hold = collect(hold_paths, det, rec)
@@ -102,8 +112,10 @@ def main() -> None:
         "mean": round(float(np.mean(pairs)), 4),
         "max": round(pairs_sorted[-1], 4),
     }
-    print(f"[baseline] holdout-vs-holdout cosine: median={baseline['median']} "
-          f"mean={baseline['mean']} range={baseline['min']}..{baseline['max']}")
+    print(
+        f"[baseline] holdout-vs-holdout cosine: median={baseline['median']} "
+        f"mean={baseline['mean']} range={baseline['min']}..{baseline['max']}"
+    )
 
     gen_paths: list[Path] = []
     for g in args.generated:
@@ -114,24 +126,30 @@ def main() -> None:
     rows = []
     for name, v in gen.items():
         sims = H @ v
-        rows.append({
-            "image": name,
-            "max_vs_holdout": round(float(sims.max()), 4),
-            "mean_vs_holdout": round(float(sims.mean()), 4),
-            "passes_sface_threshold": bool(sims.mean() >= SFACE_THRESHOLD),
-        })
+        rows.append(
+            {
+                "image": name,
+                "max_vs_holdout": round(float(sims.max()), 4),
+                "mean_vs_holdout": round(float(sims.mean()), 4),
+                "passes_sface_threshold": bool(sims.mean() >= SFACE_THRESHOLD),
+            }
+        )
     rows.sort(key=lambda r: -r["mean_vs_holdout"])
 
     print(f"\n{'image':46s} {'mean':>8s} {'max':>8s}  same-id?")
     for r in rows:
-        print(f"{r['image'][:46]:46s} {r['mean_vs_holdout']:8.4f} {r['max_vs_holdout']:8.4f}  "
-              f"{'YES' if r['passes_sface_threshold'] else 'no'}")
+        print(
+            f"{r['image'][:46]:46s} {r['mean_vs_holdout']:8.4f} {r['max_vs_holdout']:8.4f}  "
+            f"{'YES' if r['passes_sface_threshold'] else 'no'}"
+        )
 
     if rows:
         gm = float(np.mean([r["mean_vs_holdout"] for r in rows]))
-        print(f"\n[verdict] generated mean={gm:.4f} vs real-person baseline "
-              f"median={baseline['median']}  ->  "
-              f"{round(100*gm/baseline['median'])}% of the real baseline")
+        print(
+            f"\n[verdict] generated mean={gm:.4f} vs real-person baseline "
+            f"median={baseline['median']}  ->  "
+            f"{round(100*gm/baseline['median'])}% of the real baseline"
+        )
 
     report = {"sface_threshold": SFACE_THRESHOLD, "holdout_baseline": baseline, "generated": rows}
     if args.out:

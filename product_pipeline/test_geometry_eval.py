@@ -32,7 +32,7 @@ class GeometryEvalTests(unittest.TestCase):
             "cuff_l": [0.25 + x_shift, 0.55],
             "cuff_r": [0.75 + x_shift, 0.55],
             "hem_l": [0.38 + x_shift, 0.75],
-            "hem_r": [0.62 + x_shift, 0.75]
+            "hem_r": [0.62 + x_shift, 0.75],
         }
         path = self.root / name
         path.write_text(json.dumps({"landmarks": points}), encoding="utf-8")

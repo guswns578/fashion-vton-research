@@ -1,4 +1,5 @@
 """Plan, resume, and score coarse real-garment cloth calibration trials."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,6 @@ from itertools import product
 from pathlib import Path
 
 from geometry_eval import evaluate
-
 
 HERE = Path(__file__).resolve().parent
 
@@ -22,15 +22,17 @@ def build_trials() -> list[dict]:
         (0.15, 0.35, 0.8),
     ):
         trial_id = f"m{int(mass_scale)}_d{int(damping_scale * 10):02d}_b{int(bending * 100):03d}"
-        trials.append({
-            "trial_id": trial_id,
-            "solver_mass_scale": mass_scale,
-            "damping_scale": damping_scale,
-            "tension_stiffness": 20.0,
-            "compression_stiffness": 20.0,
-            "shear_stiffness": 8.0,
-            "bending_stiffness": bending,
-        })
+        trials.append(
+            {
+                "trial_id": trial_id,
+                "solver_mass_scale": mass_scale,
+                "damping_scale": damping_scale,
+                "tension_stiffness": 20.0,
+                "compression_stiffness": 20.0,
+                "shear_stiffness": 8.0,
+                "bending_stiffness": bending,
+            }
+        )
     return trials
 
 
@@ -45,24 +47,42 @@ def run_trial(
     command = [
         sys.executable,
         str(HERE / "run_cloth_ablation.py"),
-        "--out", str(out),
-        "--presets", "medium",
-        "--frames", str(max_frames),
-        "--min-frames", "160",
-        "--settle-consecutive", "3",
-        "--resolution", resolution,
-        "--camera", str(camera),
-        "--garment-kind", "sewn-long-sleeve",
-        "--solver-quality", "20",
-        "--collision-quality", "8",
-        "--sewing-force", "12",
-        "--pilot", str(pilot),
-        "--solver-mass-scale", str(trial["solver_mass_scale"]),
-        "--damping-scale", str(trial["damping_scale"]),
-        "--tension-stiffness", str(trial["tension_stiffness"]),
-        "--compression-stiffness", str(trial["compression_stiffness"]),
-        "--shear-stiffness", str(trial["shear_stiffness"]),
-        "--bending-stiffness", str(trial["bending_stiffness"]),
+        "--out",
+        str(out),
+        "--presets",
+        "medium",
+        "--frames",
+        str(max_frames),
+        "--min-frames",
+        "160",
+        "--settle-consecutive",
+        "3",
+        "--resolution",
+        resolution,
+        "--camera",
+        str(camera),
+        "--garment-kind",
+        "sewn-long-sleeve",
+        "--solver-quality",
+        "20",
+        "--collision-quality",
+        "8",
+        "--sewing-force",
+        "12",
+        "--pilot",
+        str(pilot),
+        "--solver-mass-scale",
+        str(trial["solver_mass_scale"]),
+        "--damping-scale",
+        str(trial["damping_scale"]),
+        "--tension-stiffness",
+        str(trial["tension_stiffness"]),
+        "--compression-stiffness",
+        str(trial["compression_stiffness"]),
+        "--shear-stiffness",
+        str(trial["shear_stiffness"]),
+        "--bending-stiffness",
+        str(trial["bending_stiffness"]),
         "--allow-unsettled",
     ]
     subprocess.run(command, check=True)
@@ -118,7 +138,7 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     trials = build_trials()
     if args.limit:
-        trials = trials[:args.limit]
+        trials = trials[: args.limit]
     plan = {
         "schema_version": 1,
         "purpose": "coarse_real_worn_cloth_parameter_calibration",
@@ -147,7 +167,14 @@ def main() -> None:
     for trial in trials:
         trial_root = out / "trials" / trial["trial_id"]
         if not (trial_root / "report.json").exists():
-            run_trial(trial, args.pilot.resolve(), args.camera.resolve(), trial_root, args.resolution, args.max_frames)
+            run_trial(
+                trial,
+                args.pilot.resolve(),
+                args.camera.resolve(),
+                trial_root,
+                args.resolution,
+                args.max_frames,
+            )
         rows.append(score_trial(trial, trial_root, args.real_mask.resolve()))
     ranked = sorted(
         (row for row in rows if row["status"] == "scored"),

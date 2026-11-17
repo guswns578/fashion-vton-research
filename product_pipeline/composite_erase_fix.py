@@ -22,6 +22,7 @@ on face / hair / hands / trousers / background still holds and is re-measured.
 
 Reads only existing run artifacts -- no GPU, no FASHN re-run.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -31,24 +32,50 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageFilter
 
-
 ID_TO_LABEL = {
-    0: "background", 1: "face", 2: "hair", 3: "top", 4: "dress", 5: "skirt",
-    6: "pants", 7: "belt", 8: "bag", 9: "hat", 10: "scarf", 11: "glasses",
-    12: "arms", 13: "hands", 14: "legs", 15: "feet", 16: "torso", 17: "jewelry",
+    0: "background",
+    1: "face",
+    2: "hair",
+    3: "top",
+    4: "dress",
+    5: "skirt",
+    6: "pants",
+    7: "belt",
+    8: "bag",
+    9: "hat",
+    10: "scarf",
+    11: "glasses",
+    12: "arms",
+    13: "hands",
+    14: "legs",
+    15: "feet",
+    16: "torso",
+    17: "jewelry",
 }
 LABEL_IDS = {name: i for i, name in ID_TO_LABEL.items()}
 # Generated pixels are never taken on these, per the pipeline contract.
 NEVER_TOUCH = (
-    "face", "hair", "glasses", "hands", "pants", "belt",
-    "legs", "feet", "bag", "hat", "jewelry",
+    "face",
+    "hair",
+    "glasses",
+    "hands",
+    "pants",
+    "belt",
+    "legs",
+    "feet",
+    "bag",
+    "hat",
+    "jewelry",
 )
 
 
 def feather_inside(binary: np.ndarray, radius: float = 2.0) -> np.ndarray:
     """Same ramp as the main line, reproduced so the two can be compared."""
     b = (binary > 0).astype(np.uint8) * 255
-    soft = np.asarray(Image.fromarray(b, "L").filter(ImageFilter.GaussianBlur(radius)), np.float32) / 255.0
+    soft = (
+        np.asarray(Image.fromarray(b, "L").filter(ImageFilter.GaussianBlur(radius)), np.float32)
+        / 255.0
+    )
     return soft * (binary > 0)
 
 
@@ -78,11 +105,19 @@ def main() -> None:
         help="do not grow the hard region into skin labels (needs 15_person_labels.png)",
     )
     ap.add_argument("--skin-labels", default="arms,hands,face,legs,feet")
-    ap.add_argument("--new-dilate", type=int, default=0,
-                    help="grow the full-strength region past the NEW garment mask, "
-                         "gated on FASHN actually having painted there (additive case)")
-    ap.add_argument("--diff-thr", type=int, default=18,
-                    help="raw-vs-base delta that counts as FASHN having painted")
+    ap.add_argument(
+        "--new-dilate",
+        type=int,
+        default=0,
+        help="grow the full-strength region past the NEW garment mask, "
+        "gated on FASHN actually having painted there (additive case)",
+    )
+    ap.add_argument(
+        "--diff-thr",
+        type=int,
+        default=18,
+        help="raw-vs-base delta that counts as FASHN having painted",
+    )
     ap.add_argument(
         "--hard-union",
         action="store_true",
@@ -167,12 +202,15 @@ def main() -> None:
         # base and FASHN agree -- same background, same arm -- so a ramp there
         # anti-aliases the mask step without pulling in anything wrong.
         n = args.outer_feather
-        soft = np.asarray(
-            Image.fromarray((union * 255).astype(np.uint8), "L").filter(
-                ImageFilter.GaussianBlur(n / 2.0)
-            ),
-            np.float32,
-        ) / 255.0
+        soft = (
+            np.asarray(
+                Image.fromarray((union * 255).astype(np.uint8), "L").filter(
+                    ImageFilter.GaussianBlur(n / 2.0)
+                ),
+                np.float32,
+            )
+            / 255.0
+        )
         big = Image.fromarray((union * 255).astype(np.uint8), "L")
         for _ in range(n):
             big = big.filter(ImageFilter.MaxFilter(3))

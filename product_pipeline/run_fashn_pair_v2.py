@@ -11,6 +11,7 @@ run_segfree_ab.py 와 다른 점은 배치가 아니라 **한 pair 를 깊게 �
 FASHN 은 자기 venv 에만 있다. 반드시 다음으로 실행한다:
     C:\\Dev\\fashn-vton-1.5\\.venv\\Scripts\\python.exe run_fashn_pair_v2.py ...
 """
+
 from __future__ import annotations
 
 import argparse
@@ -94,8 +95,12 @@ def main() -> None:
     ap.add_argument("--person", required=True, type=Path)
     ap.add_argument("--garment", required=True, type=Path)
     ap.add_argument("--out-dir", required=True, type=Path)
-    ap.add_argument("--baseline", type=Path, default=None,
-                    help="기존 채택 결과. 주면 같은 크기 대조 시트를 만든다.")
+    ap.add_argument(
+        "--baseline",
+        type=Path,
+        default=None,
+        help="기존 채택 결과. 주면 같은 크기 대조 시트를 만든다.",
+    )
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--steps", type=int, default=30)
     ap.add_argument("--guidance", type=float, default=1.5)
@@ -201,7 +206,9 @@ def main() -> None:
         "preservation": stats,
         "baseline_compared": str(args.baseline) if args.baseline else None,
     }
-    (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
 

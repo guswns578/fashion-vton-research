@@ -18,11 +18,11 @@ Fitting 12GB:
 Run in the forge-neo venv (it has diffusers + peft + accelerate):
     C:\\Dev\\StabilityMatrix\\Data\\Packages\\forge-neo\\venv\\Scripts\\python.exe train_identity_lora.py ...
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import math
 import random
 from datetime import datetime, timezone
 from pathlib import Path
@@ -73,7 +73,10 @@ def cache_conditioning(pipe, pairs, device, dtype):
 
         # SDXL conditions on both encoders; pooled comes from encoder 2.
         embeds, pooled = [], None
-        for tok, enc in ((pipe.tokenizer, pipe.text_encoder), (pipe.tokenizer_2, pipe.text_encoder_2)):
+        for tok, enc in (
+            (pipe.tokenizer, pipe.text_encoder),
+            (pipe.tokenizer_2, pipe.text_encoder_2),
+        ):
             ids = tok(
                 caption,
                 padding="max_length",
@@ -166,8 +169,10 @@ def main() -> None:
     params = [p for p in unet.parameters() if p.requires_grad]
     for p in params:
         p.data = p.data.to(torch.float32)
-    print(f"[lora] rank={args.rank} trainable tensors={len(params)} "
-          f"params={sum(p.numel() for p in params):,}")
+    print(
+        f"[lora] rank={args.rank} trainable tensors={len(params)} "
+        f"params={sum(p.numel() for p in params):,}"
+    )
 
     opt = torch.optim.AdamW(params, lr=args.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.steps)
@@ -211,8 +216,11 @@ def main() -> None:
             added_cond_kwargs={"text_embeds": pooled, "time_ids": add_time_ids},
         ).sample
 
-        target = noise if noise_sched.config.prediction_type == "epsilon" else \
-            noise_sched.get_velocity(latent, noise, t)
+        target = (
+            noise
+            if noise_sched.config.prediction_type == "epsilon"
+            else noise_sched.get_velocity(latent, noise, t)
+        )
         loss = F.mse_loss(pred.float(), target.float())
 
         loss.backward()
@@ -223,7 +231,9 @@ def main() -> None:
 
         if step % 25 == 0 or step == 1:
             peak = torch.cuda.max_memory_allocated() / 2**30
-            print(f"[{step:5d}/{args.steps}] loss={loss.item():.4f} lr={sched.get_last_lr()[0]:.2e} peak={peak:.2f}GiB")
+            print(
+                f"[{step:5d}/{args.steps}] loss={loss.item():.4f} lr={sched.get_last_lr()[0]:.2e} peak={peak:.2f}GiB"
+            )
             history.append({"step": step, "loss": float(loss.item())})
 
         if step % args.save_every == 0 or step == args.steps:
@@ -254,7 +264,7 @@ def main() -> None:
         "seed": args.seed,
         "target_modules": TARGET_MODULES,
         "scope": "UNet attention only; body/proportion identity. Face detail is NOT "
-                 "learned here -- see face-embedding adapter route.",
+        "learned here -- see face-embedding adapter route.",
         "peak_vram_gib": round(torch.cuda.max_memory_allocated() / 2**30, 2),
         "history": history,
     }

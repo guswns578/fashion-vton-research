@@ -4,6 +4,7 @@ The baseline is enlarged to the 2x canvas with Lanczos before a 1:1 crop is
 made.  Therefore any detail visible only in the 2x arm comes from running the
 face detailer and VTON on the larger canvas, not from displaying it larger.
 """
+
 from __future__ import annotations
 
 import argparse

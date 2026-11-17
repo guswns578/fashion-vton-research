@@ -18,12 +18,12 @@ wrong three times in this project -- most recently `residual_garment_gate.py`
 returning PASS on a visibly grey-on-grey residue. The table exists to point at
 the cells worth opening, not to replace looking at them.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 WORK = Path(__file__).parent
@@ -49,8 +49,9 @@ def identity_of(image: Path) -> float | None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bases", nargs="+", type=Path, required=True)
-    ap.add_argument("--garments", nargs="+", required=True,
-                    help="id=path pairs, e.g. p2022=path/to/031.jpg")
+    ap.add_argument(
+        "--garments", nargs="+", required=True, help="id=path pairs, e.g. p2022=path/to/031.jpg"
+    )
     ap.add_argument("--out-root", type=Path, required=True)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
@@ -70,21 +71,49 @@ def main() -> None:
             run_dir = args.out_root / f"{base_id}__{gid}"
             print(f"\n=== {base_id} x {gid} ===", flush=True)
 
-            run([str(FASHN_PY), str(WORK / "run_fashn_pair_v2.py"),
-                 "--person", str(base), "--garment", str(gpath),
-                 "--out-dir", str(run_dir), "--seed", str(args.seed)])
-            run([str(FASHN_PY), str(WORK / "residual_garment_gate.py"),
-                 "--run-dir", str(run_dir)])
-            comp = run([str(FASHN_PY), str(WORK / "composite_erase_fix.py"),
-                        "--run-dir", str(run_dir), "--old-dilate", "4", "--skin-safe",
-                        "--new-dilate", "6", "--outer-feather", "3", "--tag", "v13"])
+            run(
+                [
+                    str(FASHN_PY),
+                    str(WORK / "run_fashn_pair_v2.py"),
+                    "--person",
+                    str(base),
+                    "--garment",
+                    str(gpath),
+                    "--out-dir",
+                    str(run_dir),
+                    "--seed",
+                    str(args.seed),
+                ]
+            )
+            run([str(FASHN_PY), str(WORK / "residual_garment_gate.py"), "--run-dir", str(run_dir)])
+            comp = run(
+                [
+                    str(FASHN_PY),
+                    str(WORK / "composite_erase_fix.py"),
+                    "--run-dir",
+                    str(run_dir),
+                    "--old-dilate",
+                    "4",
+                    "--skin-safe",
+                    "--new-dilate",
+                    "6",
+                    "--outer-feather",
+                    "3",
+                    "--tag",
+                    "v13",
+                ]
+            )
 
             final = run_dir / "20_final_v13.png"
-            cell = {"base": base_id, "garment": gid, "run_dir": str(run_dir),
-                    "final": str(final) if final.exists() else None}
+            cell = {
+                "base": base_id,
+                "garment": gid,
+                "run_dir": str(run_dir),
+                "final": str(final) if final.exists() else None,
+            }
 
             try:
-                rep = json.loads(comp[comp.index("{"): comp.rindex("}") + 1])
+                rep = json.loads(comp[comp.index("{") : comp.rindex("}") + 1])
                 cell["erase_gap"] = rep.get("erase_pixels_not_taking_fashn_after")
                 cell["protected_ok"] = rep.get("byte_identical_outside")
                 cell["touched_px"] = rep.get("union_pixels")
@@ -102,13 +131,16 @@ def main() -> None:
             print(json.dumps(cell, ensure_ascii=False), flush=True)
 
     (args.out_root / "matrix.json").write_text(
-        json.dumps(cells, indent=2, ensure_ascii=False), encoding="utf-8")
+        json.dumps(cells, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     print(f"\n{'base':28s} {'garment':8s} {'erase':>6s} {'prot':>5s} {'ident':>7s} {'delta':>7s}")
     for c in cells:
-        print(f"{c['base'][:28]:28s} {c['garment']:8s} "
-              f"{str(c.get('erase_gap','?')):>6s} {str(c.get('protected_ok','?')):>5s} "
-              f"{str(c.get('identity_final','?')):>7s} {str(c.get('identity_delta','?')):>7s}")
+        print(
+            f"{c['base'][:28]:28s} {c['garment']:8s} "
+            f"{str(c.get('erase_gap','?')):>6s} {str(c.get('protected_ok','?')):>5s} "
+            f"{str(c.get('identity_final','?')):>7s} {str(c.get('identity_delta','?')):>7s}"
+        )
     print(f"\n[done] {len(cells)} cells -> {args.out_root}")
 
 

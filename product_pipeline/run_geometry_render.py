@@ -1,4 +1,5 @@
 """Run the Blender geometry adapter, validate outputs, and optionally update the pilot."""
+
 from __future__ import annotations
 
 import argparse
@@ -6,7 +7,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-
 
 DEFAULT_ROOT = Path(r"fashion_pipeline/out/geometry_pilot_v1")
 DEFAULT_BLENDER = Path(r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
@@ -54,8 +54,15 @@ def main() -> None:
 
     out = (args.out or root / "renders").resolve()
     command = [
-        str(args.blender), "--background", "--python", str(HERE / "blender_geometry_render.py"),
-        "--", "--out", str(out), "--resolution", args.resolution,
+        str(args.blender),
+        "--background",
+        "--python",
+        str(HERE / "blender_geometry_render.py"),
+        "--",
+        "--out",
+        str(out),
+        "--resolution",
+        args.resolution,
     ]
     if args.smoke_test:
         command.append("--smoke-test")
@@ -75,18 +82,24 @@ def main() -> None:
     if args.accept:
         if args.smoke_test:
             raise ValueError("Smoke-test outputs cannot be accepted into the real pilot.")
-        pilot["geometry_outputs"].update({
-            "garment_silhouette": relative_or_absolute(root, out / "garment_silhouette.png"),
-            "depth": relative_or_absolute(root, out / "depth.png"),
-            "normal": relative_or_absolute(root, out / "normal.png"),
-            "render_metadata": relative_or_absolute(root, out / "render_metadata.json"),
-        })
+        pilot["geometry_outputs"].update(
+            {
+                "garment_silhouette": relative_or_absolute(root, out / "garment_silhouette.png"),
+                "depth": relative_or_absolute(root, out / "depth.png"),
+                "normal": relative_or_absolute(root, out / "normal.png"),
+                "render_metadata": relative_or_absolute(root, out / "render_metadata.json"),
+            }
+        )
         pilot_path.write_text(json.dumps(pilot, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({
-        "validated": validation_report["pass"],
-        "accepted_into_pilot": args.accept,
-        "out": str(out),
-    }))
+    print(
+        json.dumps(
+            {
+                "validated": validation_report["pass"],
+                "accepted_into_pilot": args.accept,
+                "out": str(out),
+            }
+        )
+    )
 
 
 if __name__ == "__main__":

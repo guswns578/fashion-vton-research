@@ -15,6 +15,7 @@ The script has no scipy/opencv dependency.  It runs with NumPy and Pillow:
 
     python drape_metrics.py --manifest eval_manifest.json --out drape_eval.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,7 +29,6 @@ from typing import Any, Iterable
 
 import numpy as np
 from PIL import Image, ImageFilter
-
 
 METRIC_DIRECTIONS = {
     # These are descriptors, so neither larger nor smaller is intrinsically
@@ -112,9 +112,7 @@ def _normalise_roi(
     scale = size / max(h, w)
     nw, nh = max(2, round(w * scale)), max(2, round(h * scale))
     rgb_i = Image.fromarray(rgb).resize((nw, nh), Image.Resampling.LANCZOS)
-    gm_i = Image.fromarray((gm * 255).astype(np.uint8)).resize(
-        (nw, nh), Image.Resampling.NEAREST
-    )
+    gm_i = Image.fromarray((gm * 255).astype(np.uint8)).resize((nw, nh), Image.Resampling.NEAREST)
     canvas = np.zeros((size, size, 3), np.uint8)
     mcanvas = np.zeros((size, size), np.float32)
     ox, oy = (size - nw) // 2, (size - nh) // 2
@@ -173,9 +171,16 @@ def _ridge_metrics(y: np.ndarray, mask: np.ndarray) -> dict[str, float]:
     interior = _morph(mask, max(2, round(size / 128.0))) > 0.5
     vals = strong[interior]
     if vals.size < 64:
-        return {k: float("nan") for k in (
-            "fold_contrast", "wrinkle_density", "wrinkle_strength_p90",
-            "wrinkle_orientation_entropy", "wrinkle_bend_per_100px")}
+        return {
+            k: float("nan")
+            for k in (
+                "fold_contrast",
+                "wrinkle_density",
+                "wrinkle_strength_p90",
+                "wrinkle_orientation_entropy",
+                "wrinkle_bend_per_100px",
+            )
+        }
     med = float(np.median(vals))
     mad = float(np.median(np.abs(vals - med))) * 1.4826
     threshold = med + 2.5 * max(mad, 1e-7)
@@ -188,8 +193,9 @@ def _ridge_metrics(y: np.ndarray, mask: np.ndarray) -> dict[str, float]:
     ds_y, ds_x = np.gradient(s2)
     bend = 0.5 * np.sqrt(dc_x**2 + dc_y**2 + ds_x**2 + ds_y**2)
     weights = np.where(active, strong, 0.0)
-    hist, _ = np.histogram(theta[active], bins=12, range=(-math.pi / 2, math.pi / 2),
-                           weights=strong[active])
+    hist, _ = np.histogram(
+        theta[active], bins=12, range=(-math.pi / 2, math.pi / 2), weights=strong[active]
+    )
     hp = hist / max(float(hist.sum()), 1e-12)
     nz = hp > 0
     entropy = float(-(hp[nz] * np.log(hp[nz])).sum() / math.log(len(hist))) if nz.any() else 0.0
@@ -206,9 +212,15 @@ def _spectrum_metrics(y: np.ndarray, mask: np.ndarray) -> dict[str, float]:
     n = y.shape[0]
     valid = mask > 0.5
     if valid.sum() < 64:
-        return {k: float("nan") for k in (
-            "macro_energy_ratio", "meso_energy_ratio", "micro_energy_ratio",
-            "fold_frequency_cpg")}
+        return {
+            k: float("nan")
+            for k in (
+                "macro_energy_ratio",
+                "meso_energy_ratio",
+                "micro_energy_ratio",
+                "fold_frequency_cpg",
+            )
+        }
     # A broad residual removes illumination while retaining garment-scale folds.
     residual = y - _blur01(y, max(4.0, n / 24.0))
     soft = _blur01(_morph(mask, max(2, round(n / 128.0))), max(1.0, n / 192.0))
@@ -229,8 +241,7 @@ def _spectrum_metrics(y: np.ndarray, mask: np.ndarray) -> dict[str, float]:
         energy.append(float(power[sel].sum()))
     total = max(sum(energy), 1e-12)
     fold_sel = (cycles >= 2) & (cycles < 32)
-    centroid = float((cycles[fold_sel] * power[fold_sel]).sum() /
-                     max(power[fold_sel].sum(), 1e-12))
+    centroid = float((cycles[fold_sel] * power[fold_sel]).sum() / max(power[fold_sel].sum(), 1e-12))
     return {
         "macro_energy_ratio": energy[0] / total,
         "meso_energy_ratio": energy[1] / total,
@@ -242,8 +253,10 @@ def _spectrum_metrics(y: np.ndarray, mask: np.ndarray) -> dict[str, float]:
 def _hem_metrics(mask: np.ndarray) -> dict[str, float]:
     box = _bbox(mask)
     if box is None:
-        return {k: float("nan") for k in (
-            "hem_curvature", "hem_sag_ratio", "hem_roughness_ratio", "hem_coverage")}
+        return {
+            k: float("nan")
+            for k in ("hem_curvature", "hem_sag_ratio", "hem_roughness_ratio", "hem_coverage")
+        }
     x0, y0, x1, y1 = box
     h, w = y1 - y0, x1 - x0
     xa, xb = x0 + round(w * 0.18), x0 + round(w * 0.82)
@@ -256,14 +269,19 @@ def _hem_metrics(mask: np.ndarray) -> dict[str, float]:
             ys.append(int(yy[-1]))
     coverage = len(xs) / max(xb - xa, 1)
     if len(xs) < 12 or coverage < 0.55:
-        return {"hem_curvature": float("nan"), "hem_sag_ratio": float("nan"),
-                "hem_roughness_ratio": float("nan"), "hem_coverage": float(coverage)}
+        return {
+            "hem_curvature": float("nan"),
+            "hem_sag_ratio": float("nan"),
+            "hem_roughness_ratio": float("nan"),
+            "hem_coverage": float(coverage),
+        }
     xs, ys = np.asarray(xs, float), np.asarray(ys, float)
     window = max(3, round(len(ys) / 30))
     if window % 2 == 0:
         window += 1
-    smooth = np.convolve(np.pad(ys, window // 2, mode="edge"),
-                         np.ones(window) / window, mode="valid")
+    smooth = np.convolve(
+        np.pad(ys, window // 2, mode="edge"), np.ones(window) / window, mode="valid"
+    )
     xn = (xs - xs.mean()) / max((xs.max() - xs.min()) * 0.5, 1.0)
     yn = (smooth - smooth.mean()) / max(h, 1)
     coef = np.polyfit(xn, yn, 2)
@@ -281,8 +299,11 @@ def _hem_metrics(mask: np.ndarray) -> dict[str, float]:
 def _silhouette_metrics(mask: np.ndarray, body_mask: np.ndarray | None) -> dict[str, float | None]:
     box = _bbox(mask)
     if box is None:
-        return {"silhouette_flare_ratio": float("nan"),
-                "silhouette_width_cv": float("nan"), "body_gap_proxy": None}
+        return {
+            "silhouette_flare_ratio": float("nan"),
+            "silhouette_width_cv": float("nan"),
+            "body_gap_proxy": None,
+        }
     x0, y0, x1, y1 = box
     h = y1 - y0
     rows: list[tuple[float, float, float, float]] = []
@@ -292,13 +313,20 @@ def _silhouette_metrics(mask: np.ndarray, body_mask: np.ndarray | None) -> dict[
         if xx.size:
             rows.append(((y - y0) / max(h, 1), float(y), float(xx[0]), float(xx[-1])))
     if len(rows) < 8:
-        return {"silhouette_flare_ratio": float("nan"),
-                "silhouette_width_cv": float("nan"), "body_gap_proxy": None}
+        return {
+            "silhouette_flare_ratio": float("nan"),
+            "silhouette_width_cv": float("nan"),
+            "body_gap_proxy": None,
+        }
     rr = np.asarray(rows)
     widths = rr[:, 3] - rr[:, 2] + 1
     mid = widths[(rr[:, 0] >= 0.38) & (rr[:, 0] < 0.60)]
     bot = widths[(rr[:, 0] >= 0.72) & (rr[:, 0] < 0.90)]
-    flare = float(np.median(bot) / max(np.median(mid), 1e-8) - 1) if len(mid) and len(bot) else float("nan")
+    flare = (
+        float(np.median(bot) / max(np.median(mid), 1e-8) - 1)
+        if len(mid) and len(bot)
+        else float("nan")
+    )
     gap: float | None = None
     if body_mask is not None:
         gaps = []
@@ -326,11 +354,25 @@ def measure_image(
 ) -> dict[str, float | None]:
     """Measure one image.  All frequency values use a normalised garment box."""
     if mask.shape != (image.height, image.width):
-        mask = np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).resize(
-            image.size, Image.Resampling.NEAREST), np.float32) / 255.0
+        mask = (
+            np.asarray(
+                Image.fromarray((mask * 255).astype(np.uint8)).resize(
+                    image.size, Image.Resampling.NEAREST
+                ),
+                np.float32,
+            )
+            / 255.0
+        )
     if body_mask is not None and body_mask.shape != mask.shape:
-        body_mask = np.asarray(Image.fromarray((body_mask * 255).astype(np.uint8)).resize(
-            image.size, Image.Resampling.NEAREST), np.float32) / 255.0
+        body_mask = (
+            np.asarray(
+                Image.fromarray((body_mask * 255).astype(np.uint8)).resize(
+                    image.size, Image.Resampling.NEAREST
+                ),
+                np.float32,
+            )
+            / 255.0
+        )
     original_box = _bbox(mask)
     if original_box is None:
         raise ValueError("empty garment mask")
@@ -367,8 +409,10 @@ def measurement_noise(
     image.save(buf, "JPEG", quality=95, subsampling=0)
     buf.seek(0)
     variants.append((Image.open(buf).convert("RGB"), mask, body_mask))
-    down = image.resize((max(2, round(image.width * 0.97)), max(2, round(image.height * 0.97))),
-                        Image.Resampling.LANCZOS).resize(base_size, Image.Resampling.LANCZOS)
+    down = image.resize(
+        (max(2, round(image.width * 0.97)), max(2, round(image.height * 0.97))),
+        Image.Resampling.LANCZOS,
+    ).resize(base_size, Image.Resampling.LANCZOS)
     variants.append((down, mask, body_mask))
     variants.append((image, _morph(mask, 1), body_mask))
     variants.append((image, _morph(mask, 1, dilate=True), body_mask))
@@ -390,15 +434,20 @@ def _existing_entry(spec: Any) -> dict[str, Any] | None:
     return e if Path(e["image"]).exists() and Path(e["mask"]).exists() else None
 
 
-def _preservation(source: Image.Image, generated: Image.Image, change_mask: np.ndarray | None) -> dict[str, float]:
+def _preservation(
+    source: Image.Image, generated: Image.Image, change_mask: np.ndarray | None
+) -> dict[str, float]:
     if generated.size != source.size:
         generated = generated.resize(source.size, Image.Resampling.LANCZOS)
     a, b = np.asarray(source, np.int16), np.asarray(generated, np.int16)
     d = np.abs(a - b).max(2)
     outside = np.ones(d.shape, bool) if change_mask is None else change_mask <= 0.0
     if not outside.any():
-        return {"outside_mae": float("nan"), "outside_changed_fraction": float("nan"),
-                "outside_max_delta": float("nan")}
+        return {
+            "outside_mae": float("nan"),
+            "outside_changed_fraction": float("nan"),
+            "outside_max_delta": float("nan"),
+        }
     return {
         "outside_mae": float(d[outside].mean()),
         "outside_changed_fraction": float((d[outside] > 0).mean()),
@@ -414,8 +463,11 @@ def _balanced_summary(values: Iterable[tuple[str, float]]) -> dict[str, float | 
     per_group = [float(np.median(v)) for v in groups.values() if v]
     if not per_group:
         return {"n_products": 0, "median": None, "p90": None}
-    return {"n_products": len(per_group), "median": float(np.median(per_group)),
-            "p90": float(np.quantile(per_group, 0.90))}
+    return {
+        "n_products": len(per_group),
+        "median": float(np.median(per_group)),
+        "p90": float(np.quantile(per_group, 0.90)),
+    }
 
 
 def evaluate_manifest(manifest_path: Path, size: int = 384) -> dict[str, Any]:
@@ -430,18 +482,30 @@ def evaluate_manifest(manifest_path: Path, size: int = 384) -> dict[str, Any]:
         gt = _existing_entry(sample.get("ground_truth"))
         if gt is None:
             raw_gt = _entry(sample.get("ground_truth")) or {}
-            missing_ground_truth.append({
-                "sample_id": sid,
-                "image": str(raw_gt.get("image", "")),
-                "mask": str(raw_gt.get("mask", "")),
-            })
+            missing_ground_truth.append(
+                {
+                    "sample_id": sid,
+                    "image": str(raw_gt.get("image", "")),
+                    "mask": str(raw_gt.get("mask", "")),
+                }
+            )
             continue
         gt_im = _as_rgb(gt["image"])
         gt_mask = _as_mask(gt["mask"], gt_im.size)
-        body = _as_mask(gt["body_mask"], gt_im.size) if gt.get("body_mask") and Path(gt["body_mask"]).exists() else None
+        body = (
+            _as_mask(gt["body_mask"], gt_im.size)
+            if gt.get("body_mask") and Path(gt["body_mask"]).exists()
+            else None
+        )
         gt_metrics = measure_image(gt_im, gt_mask, body, size)
-        records.append({"sample_id": sid, "product_id": product, "variant": "ground_truth",
-                        "metrics": gt_metrics})
+        records.append(
+            {
+                "sample_id": sid,
+                "product_id": product,
+                "variant": "ground_truth",
+                "metrics": gt_metrics,
+            }
+        )
         for rep in measurement_noise(gt_im, gt_mask, body, size):
             for key, value in gt_metrics.items():
                 if key in METRIC_DIRECTIONS and _finite(value) and _finite(rep.get(key)):
@@ -452,13 +516,24 @@ def evaluate_manifest(manifest_path: Path, size: int = 384) -> dict[str, Any]:
                 continue
             im = _as_rgb(spec["image"])
             mask = _as_mask(spec["mask"], im.size)
-            bm = _as_mask(spec["body_mask"], im.size) if spec.get("body_mask") and Path(spec["body_mask"]).exists() else None
+            bm = (
+                _as_mask(spec["body_mask"], im.size)
+                if spec.get("body_mask") and Path(spec["body_mask"]).exists()
+                else None
+            )
             metrics = measure_image(im, mask, bm, size)
             change = None
             if spec.get("change_mask") and Path(spec["change_mask"]).exists():
                 change = _as_mask(spec["change_mask"], gt_im.size)
-            records.append({"sample_id": sid, "product_id": product, "variant": variant,
-                            "metrics": metrics, "preservation": _preservation(gt_im, im, change)})
+            records.append(
+                {
+                    "sample_id": sid,
+                    "product_id": product,
+                    "variant": variant,
+                    "metrics": metrics,
+                    "preservation": _preservation(gt_im, im, change),
+                }
+            )
         print(f"[{i}/{len(samples)}] {sid}", flush=True)
 
     if not records:
@@ -486,13 +561,17 @@ def evaluate_manifest(manifest_path: Path, size: int = 384) -> dict[str, Any]:
                     prod = rr[variant]["product_id"]
                     vals.append((prod, abs(float(v) - float(g))))
                     signed.append((prod, float(v) - float(g)))
-            metrics_summary[metric] = {"absolute_error": _balanced_summary(vals),
-                                       "signed_bias": _balanced_summary(signed)}
+            metrics_summary[metric] = {
+                "absolute_error": _balanced_summary(vals),
+                "signed_bias": _balanced_summary(signed),
+            }
         preserve = {}
         for key in ("outside_mae", "outside_changed_fraction", "outside_max_delta"):
             preserve[key] = _balanced_summary(
                 (r["product_id"], float(r["preservation"][key]))
-                for r in records if r["variant"] == variant and r.get("preservation")
+                for r in records
+                if r["variant"] == variant
+                and r.get("preservation")
                 and _finite(r["preservation"].get(key))
             )
         comparisons[variant] = {"metrics": metrics_summary, "preservation": preserve}
@@ -508,7 +587,9 @@ def evaluate_manifest(manifest_path: Path, size: int = 384) -> dict[str, Any]:
         per_product = []
         for product, rows in gt_by_product.items():
             vals = [float(r[metric]) for r in rows if _finite(r.get(metric))]
-            diffs = [abs(vals[a] - vals[b]) for a in range(len(vals)) for b in range(a + 1, len(vals))]
+            diffs = [
+                abs(vals[a] - vals[b]) for a in range(len(vals)) for b in range(a + 1, len(vals))
+            ]
             if diffs:
                 per_product.append((product, float(np.median(diffs))))
         pose[metric] = _balanced_summary(per_product)
@@ -542,10 +623,16 @@ def _write_csv(result: dict[str, Any], path: Path) -> None:
     preserve_names = ["outside_mae", "outside_changed_fraction", "outside_max_delta"]
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8-sig") as f:
-        w = csv.DictWriter(f, fieldnames=["sample_id", "product_id", "variant"] + metric_names + preserve_names)
+        w = csv.DictWriter(
+            f, fieldnames=["sample_id", "product_id", "variant"] + metric_names + preserve_names
+        )
         w.writeheader()
         for r in result["records"]:
-            row = {"sample_id": r["sample_id"], "product_id": r["product_id"], "variant": r["variant"]}
+            row = {
+                "sample_id": r["sample_id"],
+                "product_id": r["product_id"],
+                "variant": r["variant"],
+            }
             row.update(r["metrics"])
             row.update(r.get("preservation", {}))
             w.writerow(row)

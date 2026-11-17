@@ -55,13 +55,18 @@ class DrapeMetricsTests(unittest.TestCase):
     def test_manifest_with_no_existing_ground_truth_fails(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            manifest = {"samples": [{
-                "sample_id": "missing", "product_id": "p1",
-                "ground_truth": {
-                    "image": str(root / "missing.png"),
-                    "mask": str(root / "missing_mask.png"),
-                },
-            }]}
+            manifest = {
+                "samples": [
+                    {
+                        "sample_id": "missing",
+                        "product_id": "p1",
+                        "ground_truth": {
+                            "image": str(root / "missing.png"),
+                            "mask": str(root / "missing_mask.png"),
+                        },
+                    }
+                ]
+            }
             mp = root / "manifest.json"
             mp.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "zero evaluable records"):
@@ -87,20 +92,36 @@ class DrapeMetricsTests(unittest.TestCase):
             Image.fromarray(image).save(root / "gt.png")
             Image.fromarray(image).save(root / "model.png")
             Image.fromarray(mask).save(root / "mask.png")
-            manifest = {"samples": [{
-                "sample_id": "p1_a", "product_id": "p1",
-                "ground_truth": {"image": str(root / "gt.png"), "mask": str(root / "mask.png")},
-                "variants": {"model": {"image": str(root / "model.png"),
-                                           "mask": str(root / "mask.png"),
-                                           "change_mask": str(root / "mask.png")}},
-            }]}
+            manifest = {
+                "samples": [
+                    {
+                        "sample_id": "p1_a",
+                        "product_id": "p1",
+                        "ground_truth": {
+                            "image": str(root / "gt.png"),
+                            "mask": str(root / "mask.png"),
+                        },
+                        "variants": {
+                            "model": {
+                                "image": str(root / "model.png"),
+                                "mask": str(root / "mask.png"),
+                                "change_mask": str(root / "mask.png"),
+                            }
+                        },
+                    }
+                ]
+            }
             mp = root / "manifest.json"
             mp.write_text(json.dumps(manifest), encoding="utf-8")
             result = evaluate_manifest(mp, size=192)
             self.assertEqual(result["counts"]["samples"], 1)
             self.assertIn("model", result["comparisons"])
-            self.assertEqual(result["comparisons"]["model"]["preservation"]
-                             ["outside_changed_fraction"]["median"], 0.0)
+            self.assertEqual(
+                result["comparisons"]["model"]["preservation"]["outside_changed_fraction"][
+                    "median"
+                ],
+                0.0,
+            )
 
 
 if __name__ == "__main__":

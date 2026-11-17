@@ -20,6 +20,7 @@ Contract checks (COCO-18 body + 21-point hands, all normalised by shoulder width
 Runs in the FASHN venv (DWPose + its weights live there):
     C:\\Dev\\fashn-vton-1.5\\.venv\\Scripts\\python.exe extract_pose_map.py ...
 """
+
 from __future__ import annotations
 
 import argparse
@@ -149,10 +150,12 @@ def main() -> None:
         print(f"[{status}] {img_path.name}")
         if failed:
             print(f"        failed: {', '.join(failed)}")
-        print(f"        sep L/R = {verdict['detail'].get('left_separation')}/"
-              f"{verdict['detail'].get('right_separation')}  "
-              f"hand pts L/R = {verdict['detail'].get('left_hand_points')}/"
-              f"{verdict['detail'].get('right_hand_points')}")
+        print(
+            f"        sep L/R = {verdict['detail'].get('left_separation')}/"
+            f"{verdict['detail'].get('right_separation')}  "
+            f"hand pts L/R = {verdict['detail'].get('left_hand_points')}/"
+            f"{verdict['detail'].get('right_hand_points')}"
+        )
 
     summary = {
         "min_separation": args.min_separation,

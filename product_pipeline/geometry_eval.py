@@ -1,4 +1,5 @@
 """Evaluate an aligned 3D garment render against a real worn garment."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,6 @@ from typing import Any
 import cv2
 import numpy as np
 from PIL import Image
-
 
 DEFAULT_ROOT = Path(r"fashion_pipeline/out/geometry_pilot_v1")
 
@@ -116,11 +116,13 @@ def landmark_metrics(
         rx, ry = real[name]
         px, py = rendered[name]
         distance = float(np.hypot((rx - px) * width, (ry - py) * height))
-        rows.append({
-            "name": name,
-            "distance_px": distance,
-            "distance_torso_ratio": distance / max(torso_height, 1),
-        })
+        rows.append(
+            {
+                "name": name,
+                "distance_px": distance,
+                "distance_torso_ratio": distance / max(torso_height, 1),
+            }
+        )
     values = [row["distance_torso_ratio"] for row in rows]
     return {
         "available": True,
@@ -158,10 +160,7 @@ def evaluate(
     rendered = load_mask(render_mask_path, size=size)
     real_stats = silhouette_stats(real)
     render_stats = silhouette_stats(rendered)
-    stat_error = {
-        key: abs(render_stats[key] - real_stats[key])
-        for key in real_stats
-    }
+    stat_error = {key: abs(render_stats[key] - real_stats[key]) for key in real_stats}
     real_box = bbox(real)
     torso_height = real_box[3] - real_box[1]
     tolerance = max(2, round(0.005 * np.hypot(*real.shape)))
@@ -184,7 +183,9 @@ def evaluate(
             "real_mask": str(real_mask_path.resolve()),
             "render_mask": str(render_mask_path.resolve()),
             "real_landmarks": str(real_landmarks_path.resolve()) if real_landmarks_path else None,
-            "render_landmarks": str(render_landmarks_path.resolve()) if render_landmarks_path else None,
+            "render_landmarks": (
+                str(render_landmarks_path.resolve()) if render_landmarks_path else None
+            ),
         },
         "thresholds": {
             "mask_iou": iou_threshold,
@@ -201,8 +202,10 @@ def evaluate(
             "silhouette_pass": silhouette_pass,
             "landmark_pass": landmark_pass,
             "overall_pass": silhouette_pass and landmark_pass,
-            "status": "pass" if silhouette_pass and landmark_pass else (
-                "incomplete" if not landmarks.get("available") else "fail"
+            "status": (
+                "pass"
+                if silhouette_pass and landmark_pass
+                else ("incomplete" if not landmarks.get("available") else "fail")
             ),
         },
         "overlay": str(overlay_path.resolve()),
@@ -227,9 +230,15 @@ def main() -> None:
     pilot_path = args.pilot or root / "pilot.json"
     pilot = json.loads(pilot_path.read_text(encoding="utf-8"))
     real_mask = args.real_mask or resolve_asset(root, pilot["evaluation"]["real_worn_mask"])
-    render_mask = args.render_mask or resolve_asset(root, pilot["geometry_outputs"]["garment_silhouette"])
-    real_landmarks = args.real_landmarks or resolve_asset(root, pilot["evaluation"]["real_worn_landmarks"])
-    render_landmarks = args.render_landmarks or resolve_asset(root, pilot["geometry_outputs"]["landmarks"])
+    render_mask = args.render_mask or resolve_asset(
+        root, pilot["geometry_outputs"]["garment_silhouette"]
+    )
+    real_landmarks = args.real_landmarks or resolve_asset(
+        root, pilot["evaluation"]["real_worn_landmarks"]
+    )
+    render_landmarks = args.render_landmarks or resolve_asset(
+        root, pilot["geometry_outputs"]["landmarks"]
+    )
     if not real_mask or not render_mask:
         raise ValueError("Both real and rendered garment masks are required.")
 

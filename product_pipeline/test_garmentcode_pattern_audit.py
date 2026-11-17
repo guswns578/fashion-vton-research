@@ -24,9 +24,7 @@ class GarmentCodePatternAuditTests(unittest.TestCase):
     def test_semicircle_length(self) -> None:
         panel = {
             "vertices": [[-2, 0], [2, 0]],
-            "edges": [
-                {"endpoints": [0, 1], "curvature": {"type": "circle", "params": [2, 0, 1]}}
-            ],
+            "edges": [{"endpoints": [0, 1], "curvature": {"type": "circle", "params": [2, 0, 1]}}],
         }
         self.assertAlmostEqual(edge_length(panel, 0), 2 * 3.141592653589793, places=6)
         midpoint = edge_point(panel, 0, 0.5)

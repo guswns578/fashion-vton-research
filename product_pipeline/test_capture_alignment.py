@@ -6,10 +6,22 @@ from capture_alignment import compare_points
 class CaptureAlignmentTests(unittest.TestCase):
     def points(self, dx=0.0, dy=0.0):
         names = [
-            "neck", "shoulder_r", "elbow_r", "wrist_r", "shoulder_l",
-            "elbow_l", "wrist_l", "hip_r", "hip_l", "knee_r", "knee_l",
+            "neck",
+            "shoulder_r",
+            "elbow_r",
+            "wrist_r",
+            "shoulder_l",
+            "elbow_l",
+            "wrist_l",
+            "hip_r",
+            "hip_l",
+            "knee_r",
+            "knee_l",
         ]
-        return {name: (0.3 + index * 0.03 + dx, 0.2 + index * 0.05 + dy) for index, name in enumerate(names)}
+        return {
+            name: (0.3 + index * 0.03 + dx, 0.2 + index * 0.05 + dy)
+            for index, name in enumerate(names)
+        }
 
     def test_small_shift_passes(self):
         result = compare_points(self.points(), self.points(dx=0.003), 1000, 1500)

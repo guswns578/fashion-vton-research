@@ -1,4 +1,5 @@
 """Generate GarmentCode sewing patterns from the geometry-pilot measurement contract."""
+
 from __future__ import annotations
 
 import argparse
@@ -13,13 +14,14 @@ import yaml
 from garmentcode_pattern_audit import audit, realized_measurements
 from measurement_geometry import DEFAULT_BODY_CM, DEFAULT_GARMENT_CM, load_pilot_geometry
 
-
 ROOT = Path(__file__).resolve().parents[1]
 GARMENTCODE = ROOT / "third_party" / "GarmentCode"
 PINNED_COMMIT = "d449629979028123a5c4dc9e732a2ec19b7fce31"
 
 
-def body_overrides(body_cm: dict[str, float], neutral: dict[str, float]) -> tuple[dict[str, float], dict]:
+def body_overrides(
+    body_cm: dict[str, float], neutral: dict[str, float]
+) -> tuple[dict[str, float], dict]:
     shoulder_ratio = neutral["back_width"] / neutral["shoulder_w"]
     height_ratio = body_cm["height"] / neutral["height"]
     overrides = {
@@ -37,7 +39,16 @@ def body_overrides(body_cm: dict[str, float], neutral: dict[str, float]) -> tupl
         "arm_pose_angle": 8.0,
     }
     contract = {
-        "direct": ["height", "bust", "waist", "hips", "shoulder_w", "arm_length", "wrist", "waist_line"],
+        "direct": [
+            "height",
+            "bust",
+            "waist",
+            "hips",
+            "shoulder_w",
+            "arm_length",
+            "wrist",
+            "waist_line",
+        ],
         "derived": {
             "neck_w": "neck circumference / 2",
             "back_width": f"shoulder_breadth * neutral ratio {shoulder_ratio:.6f}",
@@ -99,15 +110,17 @@ def update_calibration(
     old_width = float(design["shirt"]["width"]["v"])
     width_factor = targets["chest_flat"] / realized["chest_flat"]
     design["shirt"]["width"]["v"] = float(old_width * width_factor)
-    design["shirt"]["flare"]["v"] = float(design["shirt"]["flare"]["v"] * (
-        targets["hem_flat"] / realized["hem_flat"] / width_factor
-    ))
-    design["shirt"]["length"]["v"] = float(design["shirt"]["length"]["v"] + (
-        targets["body_length"] - realized["body_length"]
-    ) / body_params["waist_line"])
-    design["sleeve"]["length"]["v"] = float(design["sleeve"]["length"]["v"] + (
-        targets["sleeve_length"] - realized["sleeve_length"]
-    ) / body_params["arm_length"])
+    design["shirt"]["flare"]["v"] = float(
+        design["shirt"]["flare"]["v"] * (targets["hem_flat"] / realized["hem_flat"] / width_factor)
+    )
+    design["shirt"]["length"]["v"] = float(
+        design["shirt"]["length"]["v"]
+        + (targets["body_length"] - realized["body_length"]) / body_params["waist_line"]
+    )
+    design["sleeve"]["length"]["v"] = float(
+        design["sleeve"]["length"]["v"]
+        + (targets["sleeve_length"] - realized["sleeve_length"]) / body_params["arm_length"]
+    )
     design["sleeve"]["end_width"]["v"] = float(
         design["sleeve"]["end_width"]["v"] * targets["cuff_flat"] / realized["cuff_flat"]
     )
@@ -128,7 +141,9 @@ def update_calibration(
     return design
 
 
-def calibrate_design(MetaGarment, body, design: dict, targets: dict[str, float], iterations: int = 6):
+def calibrate_design(
+    MetaGarment, body, design: dict, targets: dict[str, float], iterations: int = 6
+):
     history = []
     final_garment = None
     final_pattern = None
@@ -155,7 +170,9 @@ def generate(pilot_path: Path | None, out: Path) -> Path:
     body_geometry, _, source = load_pilot_geometry(pilot_path)
     if pilot_path:
         pilot = json.loads(pilot_path.read_text(encoding="utf-8"))
-        garment_cm = {key: float(value) for key, value in pilot["garment"]["measurements_cm"].items()}
+        garment_cm = {
+            key: float(value) for key, value in pilot["garment"]["measurements_cm"].items()
+        }
     else:
         garment_cm = dict(DEFAULT_GARMENT_CM)
     body_cm = body_geometry.source_cm
@@ -187,7 +204,9 @@ def generate(pilot_path: Path | None, out: Path) -> Path:
     body.save(folder)
     generated_design = Path(folder) / "design.yaml"
     plain_design = json.loads(json.dumps(design, default=float))
-    generated_design.write_text(yaml.safe_dump({"design": plain_design}, sort_keys=False), encoding="utf-8")
+    generated_design.write_text(
+        yaml.safe_dump({"design": plain_design}, sort_keys=False), encoding="utf-8"
+    )
     contract = {
         "schema_version": 1,
         "source": source,

@@ -21,6 +21,7 @@
 파서로 **아닌 것을 지우는** 데에만 쓴다. 라벨별 내역을 전부 출력해
 사람이 마지막 판정을 하게 한다.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -31,9 +32,24 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 ID_TO_LABEL = {
-    0: "background", 1: "face", 2: "hair", 3: "top", 4: "dress", 5: "skirt",
-    6: "pants", 7: "belt", 8: "bag", 9: "hat", 10: "scarf", 11: "glasses",
-    12: "arms", 13: "hands", 14: "legs", 15: "feet", 16: "torso", 17: "jewelry",
+    0: "background",
+    1: "face",
+    2: "hair",
+    3: "top",
+    4: "dress",
+    5: "skirt",
+    6: "pants",
+    7: "belt",
+    8: "bag",
+    9: "hat",
+    10: "scarf",
+    11: "glasses",
+    12: "arms",
+    13: "hands",
+    14: "legs",
+    15: "feet",
+    16: "torso",
+    17: "jewelry",
 }
 # 옛 옷이 덜 잡혔을 때 그 화소가 받게 되는 라벨만 후보로 둔다.
 # ★background 를 빼면 안 된다 -- 목 뒤로 솟은 폴로 카라는 파서가 통째로 background 로
@@ -61,6 +77,7 @@ def main() -> None:
     args = ap.parse_args()
 
     import sys
+
     sys.path.insert(0, r"C:\Dev\fashn-vton-1.5\src")
     import fashn_human_parser as fhp
 
@@ -74,8 +91,11 @@ def main() -> None:
     seg = fhp.FashnHumanParser().predict(person_img)
     seg = np.asarray(seg)
     if seg.shape != union.shape:
-        seg = np.asarray(Image.fromarray(seg.astype(np.uint8)).resize(
-            (union.shape[1], union.shape[0]), Image.Resampling.NEAREST))
+        seg = np.asarray(
+            Image.fromarray(seg.astype(np.uint8)).resize(
+                (union.shape[1], union.shape[0]), Image.Resampling.NEAREST
+            )
+        )
     Image.fromarray((seg.astype(np.uint8) * 14) % 255, "L").save(run / "15_person_labels.png")
 
     src = person[old]
@@ -106,6 +126,7 @@ def main() -> None:
 
     # 덩어리만 남긴다. 벽돌/피부 하이라이트 오검출은 얇게 흩어져 여기서 죽는다.
     import cv2
+
     n, lab_im, stats, _ = cv2.connectedComponentsWithStats(cand_mask, connectivity=8)
     resid_mask = np.zeros(union.shape, bool)
     zones = []
@@ -118,15 +139,22 @@ def main() -> None:
         dom = {}
         for lid in np.unique(seg[comp]):
             dom[ID_TO_LABEL.get(int(lid), str(int(lid)))] = int((seg[comp] == lid).sum())
-        zones.append({
-            "pixels": area,
-            "bbox": [int(stats[i, cv2.CC_STAT_LEFT]), int(stats[i, cv2.CC_STAT_TOP]),
-                     int(stats[i, cv2.CC_STAT_LEFT] + stats[i, cv2.CC_STAT_WIDTH]),
-                     int(stats[i, cv2.CC_STAT_TOP] + stats[i, cv2.CC_STAT_HEIGHT])],
-            "original_labels": dict(sorted(dom.items(), key=lambda kv: -kv[1])),
-        })
+        zones.append(
+            {
+                "pixels": area,
+                "bbox": [
+                    int(stats[i, cv2.CC_STAT_LEFT]),
+                    int(stats[i, cv2.CC_STAT_TOP]),
+                    int(stats[i, cv2.CC_STAT_LEFT] + stats[i, cv2.CC_STAT_WIDTH]),
+                    int(stats[i, cv2.CC_STAT_TOP] + stats[i, cv2.CC_STAT_HEIGHT]),
+                ],
+                "original_labels": dict(sorted(dom.items(), key=lambda kv: -kv[1])),
+            }
+        )
     zones.sort(key=lambda z: -z["pixels"])
-    Image.fromarray(resid_mask.astype(np.uint8) * 255, "L").save(run / "14_residual_old_garment.png")
+    Image.fromarray(resid_mask.astype(np.uint8) * 255, "L").save(
+        run / "14_residual_old_garment.png"
+    )
 
     report = {
         "old_garment_colors_learned": [[round(float(v), 1) for v in c] for c in clusters],
@@ -144,7 +172,8 @@ def main() -> None:
         "verdict": "FAIL" if int(resid_mask.sum()) > args.fail_pixels else "PASS",
     }
     (run / "14_residual_report.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

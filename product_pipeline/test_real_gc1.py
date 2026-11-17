@@ -9,7 +9,6 @@ import unittest
 from run_real_gc1 import same_resolved_asset, simulation_command, stage_blockers
 from validate_geometry_pilot import build_readiness_report
 
-
 HERE = Path(__file__).resolve().parent
 
 
@@ -38,30 +37,38 @@ class RealGc1Tests(unittest.TestCase):
             "hem_flat": 55,
             "armhole": 25,
         }
-        pilot["garment"]["material"].update({
-            "composition": "cotton 100%",
-            "mass_gsm": 210,
-            "bending_class": "medium",
-            "surface_class": "matte",
-        })
-        pilot["subject"]["body_mesh"].update({
-            "path": "body.obj",
-            "format": "obj",
-            "scale_unit": "m",
-            "pose": "a_pose",
-            "alignment": "prealigned",
-        })
-        pilot["garment"]["assets"].update({
-            "flat_front": "flat_front.png",
-            "flat_back": "flat_back.png",
-        })
-        pilot["capture"].update({
-            "calibration_image": "calibration.png",
-            "reference_pose_image": "reference.png",
-            "worn_ground_truth_images": ["worn.png"],
-            "camera_distance_cm": 250,
-            "focal_length_35mm_eq": 26,
-        })
+        pilot["garment"]["material"].update(
+            {
+                "composition": "cotton 100%",
+                "mass_gsm": 210,
+                "bending_class": "medium",
+                "surface_class": "matte",
+            }
+        )
+        pilot["subject"]["body_mesh"].update(
+            {
+                "path": "body.obj",
+                "format": "obj",
+                "scale_unit": "m",
+                "pose": "a_pose",
+                "alignment": "prealigned",
+            }
+        )
+        pilot["garment"]["assets"].update(
+            {
+                "flat_front": "flat_front.png",
+                "flat_back": "flat_back.png",
+            }
+        )
+        pilot["capture"].update(
+            {
+                "calibration_image": "calibration.png",
+                "reference_pose_image": "reference.png",
+                "worn_ground_truth_images": ["worn.png"],
+                "camera_distance_cm": 250,
+                "focal_length_35mm_eq": 26,
+            }
+        )
         for name in (
             "body.obj",
             "flat_front.png",

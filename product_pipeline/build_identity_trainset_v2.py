@@ -24,6 +24,7 @@ v1 failed. Two causes, both fixed here.
 
 Writes to a NEW dataset directory; v1 is left intact for comparison.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,9 +37,7 @@ from PIL import Image
 BODY_BUCKET = (896, 1152)
 FACE_BUCKET = (512, 512)
 
-CURATED = Path(
-    r"fashion_pipeline/dataset/catalog_curated/tops_v1/pairs_selected.jsonl"
-)
+CURATED = Path(r"fashion_pipeline/dataset/catalog_curated/tops_v1/pairs_selected.jsonl")
 
 
 def product_names() -> dict[str, str]:
@@ -54,9 +53,9 @@ def product_names() -> dict[str, str]:
 
 def clean_garment(name: str) -> str:
     """Strip promo/pricing noise and brand prefixes from a product title."""
-    n = re.sub(r"\[.*?\]", " ", name)            # [가을진행], [2장 구매 시 …]
+    n = re.sub(r"\[.*?\]", " ", name)  # [가을진행], [2장 구매 시 …]
     n = re.sub(r"\d+\s*원", " ", n)
-    n = re.sub(r"[^A-Za-z ]+", " ", n)            # keep the English descriptor
+    n = re.sub(r"[^A-Za-z ]+", " ", n)  # keep the English descriptor
     n = re.sub(r"\s+", " ", n).strip().lower()
     words = n.split()
     # Product titles start with a short house code (e.g. "Od", "Se", "Ay").
@@ -121,7 +120,8 @@ def main() -> None:
         default=Path(r"fashion_pipeline/dataset/seller_identity_faces_50_v1/splits/group_40_10_v1"),
     )
     ap.add_argument(
-        "--out-dir", type=Path,
+        "--out-dir",
+        type=Path,
         default=Path(r"fashion_pipeline/dataset/seller_identity_trainset_v2"),
     )
     ap.add_argument("--token", default="hgnst_model")
@@ -134,7 +134,11 @@ def main() -> None:
     report = {}
 
     for split in ("train", "holdout"):
-        rows = [json.loads(l) for l in (args.split_dir / f"{split}.jsonl").open(encoding="utf-8") if l.strip()]
+        rows = [
+            json.loads(l)
+            for l in (args.split_dir / f"{split}.jsonl").open(encoding="utf-8")
+            if l.strip()
+        ]
         bdir = args.out_dir / split / "body"
         fdir = args.out_dir / split / "face"
         bdir.mkdir(parents=True, exist_ok=True)

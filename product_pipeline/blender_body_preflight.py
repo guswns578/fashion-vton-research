@@ -1,4 +1,5 @@
 """Audit an imported body collider before expensive cloth preparation and simulation."""
+
 from __future__ import annotations
 
 import argparse
@@ -61,12 +62,14 @@ def main() -> None:
     for obj in objects:
         topology = body_mesh_topology(obj)
         components = connected_components(obj)
-        audits.append({
-            "object": obj.name,
-            **topology,
-            "connected_components": components,
-            "single_shell": components == 1,
-        })
+        audits.append(
+            {
+                "object": obj.name,
+                **topology,
+                "connected_components": components,
+                "single_shell": components == 1,
+            }
+        )
     checks = {
         "one_mesh_object": len(objects) == 1,
         "single_connected_shell": all(item["single_shell"] for item in audits),

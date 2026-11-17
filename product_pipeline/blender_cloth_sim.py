@@ -2,6 +2,7 @@
 
 This validates the simulation/export path. It is not a calibrated fabric model.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -27,7 +28,6 @@ from measurement_geometry import (
     resolve_mass_gsm,
     vertex_mass_from_gsm,
 )
-
 
 PRESETS = {
     "soft": {
@@ -55,7 +55,7 @@ PRESETS = {
 
 
 def script_args() -> list[str]:
-    return sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    return sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 
 
 def clear_scene() -> None:
@@ -172,10 +172,14 @@ def create_body(garment_kind: str, dimensions: BodyProxy) -> list[bpy.types.Obje
     metric = garment_kind in {"sewn-long-sleeve", "garmentcode-sewn"}
     torso_location = (0, 0, dimensions.torso_center_z_m) if metric else (0, 0, 0.03)
     torso_scale = (
-        dimensions.torso_radius_x_m,
-        dimensions.torso_radius_y_m,
-        dimensions.torso_half_height_m,
-    ) if metric else (0.46, 0.29, 0.92)
+        (
+            dimensions.torso_radius_x_m,
+            dimensions.torso_radius_y_m,
+            dimensions.torso_half_height_m,
+        )
+        if metric
+        else (0.46, 0.29, 0.92)
+    )
     bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, location=torso_location)
     body = bpy.context.object
     body.name = "body_torso"
@@ -216,10 +220,14 @@ def create_body(garment_kind: str, dimensions: BodyProxy) -> list[bpy.types.Obje
     if garment_kind in {"long-sleeve", "sewn-long-sleeve", "garmentcode-sewn"}:
         for side in (-1, 1):
             arm_location = (
-                dimensions.arm_center_x_m * side,
-                0.0,
-                dimensions.arm_center_z_m,
-            ) if metric else (0.73 * side, 0.0, 0.54)
+                (
+                    dimensions.arm_center_x_m * side,
+                    0.0,
+                    dimensions.arm_center_z_m,
+                )
+                if metric
+                else (0.73 * side, 0.0, 0.54)
+            )
             arm_angle = dimensions.arm_angle_deg if metric else 8.0
             if metric:
                 wrist_radius = dimensions.source_cm["wrist"] / 100.0 / (2 * math.pi)
@@ -337,12 +345,14 @@ def create_sewn_long_sleeve(
             center_x = float((x_values[ix] + x_values[ix + 1]) * 0.5)
             center_z = float((z_values[iz] + z_values[iz + 1]) * 0.5)
             if point_in_polygon(center_x, center_z, outline):
-                faces_local.append((
-                    vertex(ix, iz),
-                    vertex(ix + 1, iz),
-                    vertex(ix + 1, iz + 1),
-                    vertex(ix, iz + 1),
-                ))
+                faces_local.append(
+                    (
+                        vertex(ix, iz),
+                        vertex(ix + 1, iz),
+                        vertex(ix + 1, iz + 1),
+                        vertex(ix, iz + 1),
+                    )
+                )
 
     edge_counts: dict[tuple[int, int], int] = {}
     for face in faces_local:
@@ -374,10 +384,14 @@ def create_sewn_long_sleeve(
     garment = bpy.data.objects.new("garment_sewn_long_sleeve", mesh)
     bpy.context.scene.collection.objects.link(garment)
     garment.vertex_groups.new(name="top_pin")
-    return garment, np.asarray(vertices, dtype=np.float64), {
-        "front_panel": (0, panel_size),
-        "back_panel": (panel_size, panel_size * 2),
-    }
+    return (
+        garment,
+        np.asarray(vertices, dtype=np.float64),
+        {
+            "front_panel": (0, panel_size),
+            "back_panel": (panel_size, panel_size * 2),
+        },
+    )
 
 
 def create_garmentcode_sewn(
@@ -415,19 +429,24 @@ def create_garmentcode_sewn(
     if attachment_vertices:
         pin.add(attachment_vertices, 1.0, "REPLACE")
     components = contract["components"]
-    return garment, np.asarray(vertices, dtype=np.float64), components, {
-        "path": str(contract_path.resolve()),
-        "source_specification": contract.get("source_specification"),
-        "resolution_cm": contract.get("resolution_cm"),
-        "summary": contract.get("summary"),
-        "coordinate_contract": contract.get("coordinate_contract"),
-        "attachment_vertices": attachment_vertices,
-        "use_sewing_springs": use_sewing_springs,
-        "rest_shape_key_name": rest_shape_key_name,
-        "_sewing_edges": [[int(left), int(right)] for left, right in sewing_edges],
-        "_contract_rest_vertices": rest_vertices,
-        "_contract_faces": faces,
-    }
+    return (
+        garment,
+        np.asarray(vertices, dtype=np.float64),
+        components,
+        {
+            "path": str(contract_path.resolve()),
+            "source_specification": contract.get("source_specification"),
+            "resolution_cm": contract.get("resolution_cm"),
+            "summary": contract.get("summary"),
+            "coordinate_contract": contract.get("coordinate_contract"),
+            "attachment_vertices": attachment_vertices,
+            "use_sewing_springs": use_sewing_springs,
+            "rest_shape_key_name": rest_shape_key_name,
+            "_sewing_edges": [[int(left), int(right)] for left, right in sewing_edges],
+            "_contract_rest_vertices": rest_vertices,
+            "_contract_faces": faces,
+        },
+    )
 
 
 def _closest_signed_distance(
@@ -477,9 +496,7 @@ def _ray_parity_vote(
     travelled = 0.0
     maximum_distance = 100.0
     for _ in range(128):
-        hit, location, _, _ = obj.ray_cast(
-            origin, direction, distance=maximum_distance - travelled
-        )
+        hit, location, _, _ = obj.ray_cast(origin, direction, distance=maximum_distance - travelled)
         if not hit:
             break
         step = float((location - origin).length)
@@ -511,8 +528,7 @@ def body_mesh_topology(obj: bpy.types.Object) -> dict[str, int | float | bool]:
     boundary = sum(value == 1 for value in incidence.values())
     nonmanifold = sum(value > 2 for value in incidence.values())
     inconsistent_winding = sum(
-        incidence[edge] == 2 and balance != 0
-        for edge, balance in orientation_balance.items()
+        incidence[edge] == 2 and balance != 0 for edge, balance in orientation_balance.items()
     )
     return {
         "vertices": len(obj.data.vertices),
@@ -595,11 +611,13 @@ def resolve_body_penetration(
                 maximum_step = max(maximum_step, step)
         garment.data.update()
         bpy.context.view_layer.update()
-        iteration_changes.append({
-            "iteration": iteration + 1,
-            "changed_vertices": changed,
-            "maximum_step_m": maximum_step,
-        })
+        iteration_changes.append(
+            {
+                "iteration": iteration + 1,
+                "changed_vertices": changed,
+                "maximum_step_m": maximum_step,
+            }
+        )
         if changed == 0:
             break
     after = penetration_stats(garment, body, inside_mode)
@@ -744,7 +762,9 @@ def configure_cloth(
     if mass_gsm_override is not None:
         mass_gsm, mass_source = float(mass_gsm_override), "cli_override"
     else:
-        mass_gsm, mass_source = resolve_mass_gsm(pilot_material, surface_area_m2, preset["mass_gsm"])
+        mass_gsm, mass_source = resolve_mass_gsm(
+            pilot_material, surface_area_m2, preset["mass_gsm"]
+        )
     if solver_mass_scale <= 0:
         raise ValueError("solver_mass_scale must be positive.")
     if damping_scale <= 0:
@@ -822,9 +842,7 @@ def pair_distance_stats(vertices: np.ndarray, pairs) -> dict[str, float | int] |
     if not pairs:
         return None
     pair_array = np.asarray(pairs, dtype=np.int64)
-    distances = np.linalg.norm(
-        vertices[pair_array[:, 0]] - vertices[pair_array[:, 1]], axis=1
-    )
+    distances = np.linalg.norm(vertices[pair_array[:, 0]] - vertices[pair_array[:, 1]], axis=1)
     return {
         "pairs": int(len(distances)),
         "mean": float(distances.mean()),
@@ -887,9 +905,9 @@ def collision_aware_predrape(
     for iteration in range(iterations):
         difference = result[edge_array[:, 1]] - result[edge_array[:, 0]]
         lengths = np.linalg.norm(difference, axis=1)
-        correction = (
-            0.5 * relaxation * (lengths - rest_lengths) / np.maximum(lengths, 1e-12)
-        )[:, None] * difference
+        correction = (0.5 * relaxation * (lengths - rest_lengths) / np.maximum(lengths, 1e-12))[
+            :, None
+        ] * difference
         delta = np.zeros_like(result)
         degree = np.zeros(len(result), dtype=np.float64)
         np.add.at(delta, edge_array[:, 0], correction)
@@ -909,14 +927,16 @@ def collision_aware_predrape(
                 iterations=2,
                 inside_mode=inside_mode,
             )
-            projection_passes.append({
-                "iteration": iteration + 1,
-                "changed_vertices": sum(
-                    item["changed_vertices"] for item in projection["iterations"]
-                ),
-                "movement_mean_m": projection["movement_m"]["mean"],
-                "movement_maximum_m": projection["movement_m"]["maximum"],
-            })
+            projection_passes.append(
+                {
+                    "iteration": iteration + 1,
+                    "changed_vertices": sum(
+                        item["changed_vertices"] for item in projection["iterations"]
+                    ),
+                    "movement_mean_m": projection["movement_m"]["mean"],
+                    "movement_maximum_m": projection["movement_m"]["maximum"],
+                }
+            )
             result = np.asarray(
                 [tuple(vertex.co) for vertex in garment.data.vertices], dtype=np.float64
             )
@@ -1108,15 +1128,11 @@ def main() -> None:
         obj["outward_normal_sign"] = topology["outward_normal_sign"]
         body_topology.append(topology)
     body_source["topology"] = body_topology
-    penetration_inside_mode = (
-        "ray_parity" if body_source["mode"] == "external_mesh" else "normal"
-    )
+    penetration_inside_mode = "ray_parity" if body_source["mode"] == "external_mesh" else "normal"
     body_source["penetration_inside_mode"] = penetration_inside_mode
     if args.resolve_external_penetration:
         if body_source["mode"] != "external_mesh":
-            raise ValueError(
-                "--resolve-external-penetration requires an external --body-mesh."
-            )
+            raise ValueError("--resolve-external-penetration requires an external --body-mesh.")
         invalid = [item["object"] for item in body_topology if not item["watertight"]]
         if invalid:
             raise ValueError(
@@ -1154,16 +1170,11 @@ def main() -> None:
             args.garment_kind,
             panel_pattern,
         )
-    sewing_edges = (
-        garmentcode_contract.pop("_sewing_edges", []) if garmentcode_contract else []
-    )
+    sewing_edges = garmentcode_contract.pop("_sewing_edges", []) if garmentcode_contract else []
     contract_rest_vertices = (
-        garmentcode_contract.pop("_contract_rest_vertices", None)
-        if garmentcode_contract else None
+        garmentcode_contract.pop("_contract_rest_vertices", None) if garmentcode_contract else None
     )
-    contract_faces = (
-        garmentcode_contract.pop("_contract_faces", []) if garmentcode_contract else []
-    )
+    contract_faces = garmentcode_contract.pop("_contract_faces", []) if garmentcode_contract else []
     seam_before_penetration = pair_distance_stats(initial, sewing_edges)
     structure_before_penetration = structural_ratio_stats(
         initial, contract_rest_vertices, contract_faces
@@ -1173,10 +1184,7 @@ def main() -> None:
     penetration_allowed = body_source["mode"] in {
         "procedural_proxy",
         "procedural_boolean_union",
-    } or (
-        body_source["mode"] == "external_mesh"
-        and args.resolve_external_penetration
-    )
+    } or (body_source["mode"] == "external_mesh" and args.resolve_external_penetration)
     if (
         args.garment_kind == "garmentcode-sewn"
         and penetration_allowed
@@ -1269,7 +1277,8 @@ def main() -> None:
         use_pin_group=not args.disable_pinning,
         rest_shape_key_name=(
             garmentcode_contract.get("rest_shape_key_name")
-            if garmentcode_contract and not args.disable_rest_shape_key else None
+            if garmentcode_contract and not args.disable_rest_shape_key
+            else None
         ),
         collision_distance_m=args.cloth_collision_distance,
     )
@@ -1295,13 +1304,15 @@ def main() -> None:
         eligible = frame >= max(args.min_frames, dress_frames + args.settle_window)
         passed = bool(eligible and stats["mean"] <= 0.002 and stats["p90"] <= 0.005)
         settle_streak = settle_streak + 1 if passed else 0
-        settle_checks.append({
-            "frame": frame,
-            "window_frames": frame - previous_check_frame,
-            "eligible": eligible,
-            "pass": passed,
-            **stats,
-        })
+        settle_checks.append(
+            {
+                "frame": frame,
+                "window_frames": frame - previous_check_frame,
+                "eligible": eligible,
+                "pass": passed,
+                **stats,
+            }
+        )
         actual_frame = frame
         previous_check = final
         previous_check_frame = frame
@@ -1324,39 +1335,55 @@ def main() -> None:
         "schema_version": 1,
         "purpose": (
             "external_body_stationary_drape_gate"
-            if external_body else "synthetic_stationary_drape_pipeline_validation"
+            if external_body
+            else "synthetic_stationary_drape_pipeline_validation"
         ),
         "warning": (
             "An external body mesh does not validate garment fit or fabric parameters; compare "
             "against a fixed-camera worn ground truth."
-            if external_body else
-            "Preset values and procedural body are not calibrated to real fabric or a person."
+            if external_body
+            else "Preset values and procedural body are not calibrated to real fabric or a person."
         ),
         "garment_kind": args.garment_kind,
         "geometry_source": geometry_source,
-        "body_proxy": body_dimensions.to_dict()
-        if args.garment_kind in {"sewn-long-sleeve", "garmentcode-sewn"} else None,
+        "body_proxy": (
+            body_dimensions.to_dict()
+            if args.garment_kind in {"sewn-long-sleeve", "garmentcode-sewn"}
+            else None
+        ),
         "body_source": body_source,
-        "panel_pattern": panel_pattern.to_dict()
-        if args.garment_kind in {"sewn-long-sleeve", "garmentcode-sewn"} else None,
+        "panel_pattern": (
+            panel_pattern.to_dict()
+            if args.garment_kind in {"sewn-long-sleeve", "garmentcode-sewn"}
+            else None
+        ),
         "garmentcode_mesh_contract": garmentcode_contract,
         "initial_penetration": penetration_contract,
         "rest_shape_commit_after_penetration": rest_shape_commit,
         "collision_aware_predrape": collision_predrape_contract,
-        "seam_distance_m": {
-            "before_penetration_resolution": seam_before_penetration,
-            "after_penetration_resolution": seam_after_penetration,
-            "final": seam_final,
-        } if sewing_edges else None,
-        "structural_edge_ratio_to_contract_rest": {
-            "before_penetration_resolution": structure_before_penetration,
-            "after_penetration_resolution": structure_after_penetration,
-            "after_collision_aware_predrape": structure_after_collision_predrape,
-            "final": structure_final,
-        } if contract_rest_vertices is not None else None,
+        "seam_distance_m": (
+            {
+                "before_penetration_resolution": seam_before_penetration,
+                "after_penetration_resolution": seam_after_penetration,
+                "final": seam_final,
+            }
+            if sewing_edges
+            else None
+        ),
+        "structural_edge_ratio_to_contract_rest": (
+            {
+                "before_penetration_resolution": structure_before_penetration,
+                "after_penetration_resolution": structure_after_penetration,
+                "after_collision_aware_predrape": structure_after_collision_predrape,
+                "final": structure_final,
+            }
+            if contract_rest_vertices is not None
+            else None
+        ),
         "topology_warning": (
             "Long-sleeve mode uses disconnected overlapping torso and sleeve shells, not sewn panels."
-            if args.garment_kind == "long-sleeve" else None
+            if args.garment_kind == "long-sleeve"
+            else None
         ),
         "preset": args.preset,
         "physics": {**physics_preset, **mass_contract},
@@ -1371,11 +1398,15 @@ def main() -> None:
         "solver": {
             "quality": args.solver_quality,
             "collision_quality": args.collision_quality,
-            "sewing_force_max": args.sewing_force
-            if args.garment_kind == "sewn-long-sleeve" or garmentcode_uses_sewing else 0.0,
+            "sewing_force_max": (
+                args.sewing_force
+                if args.garment_kind == "sewn-long-sleeve" or garmentcode_uses_sewing
+                else 0.0
+            ),
             "pin_stiffness": 50.0 if args.garment_kind == "garmentcode-sewn" else 1.0,
             "pin_group_enabled": not args.disable_pinning,
-            "self_collision": args.garment_kind != "long-sleeve" and not args.disable_self_collision,
+            "self_collision": args.garment_kind != "long-sleeve"
+            and not args.disable_self_collision,
             "body_collision": not args.disable_body_collision,
             "body_collision_thickness_m": args.body_collision_thickness,
             "cloth_collision_distance_m": args.cloth_collision_distance,
@@ -1384,7 +1415,8 @@ def main() -> None:
             "cloth_effector_gravity": float(cloth_modifier.settings.effector_weights.gravity),
             "rest_shape_key": (
                 cloth_modifier.settings.rest_shape_key.name
-                if cloth_modifier.settings.rest_shape_key else None
+                if cloth_modifier.settings.rest_shape_key
+                else None
             ),
         },
         "frames": actual_frame,

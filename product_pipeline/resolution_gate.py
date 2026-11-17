@@ -1,4 +1,5 @@
 """Reconstruct and evaluate the interrupted framing/resolution gate."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,6 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-
 
 ROOT = Path(r"fashion_pipeline/out/res_gate")
 MANIFEST = ROOT / "manifest.json"
@@ -33,28 +33,32 @@ def build_manifest(root: Path) -> dict:
     incomplete = []
     for (product_id, condition), paths in sorted(grouped.items()):
         if not {"gt", "vton"}.issubset(paths):
-            incomplete.append({
-                "product_id": product_id,
-                "condition": condition,
-                "present": sorted(paths),
-            })
+            incomplete.append(
+                {
+                    "product_id": product_id,
+                    "condition": condition,
+                    "present": sorted(paths),
+                }
+            )
             continue
         sample_id = f"{product_id}_{condition}"
-        samples.append({
-            "sample_id": sample_id,
-            "product_id": product_id,
-            "condition": condition,
-            "ground_truth": {
-                "image": str(paths["gt"]),
-                "mask": str((root / "masks" / "ground_truth" / f"{sample_id}.png").resolve()),
-            },
-            "variants": {
-                "vton": {
-                    "image": str(paths["vton"]),
-                    "mask": str((root / "masks" / "vton" / f"{sample_id}.png").resolve()),
-                }
-            },
-        })
+        samples.append(
+            {
+                "sample_id": sample_id,
+                "product_id": product_id,
+                "condition": condition,
+                "ground_truth": {
+                    "image": str(paths["gt"]),
+                    "mask": str((root / "masks" / "ground_truth" / f"{sample_id}.png").resolve()),
+                },
+                "variants": {
+                    "vton": {
+                        "image": str(paths["vton"]),
+                        "mask": str((root / "masks" / "vton" / f"{sample_id}.png").resolve()),
+                    }
+                },
+            }
+        )
     return {
         "schema_version": 1,
         "dataset": "resolution_gate_reconstruction",
@@ -97,7 +101,9 @@ def command_masks(args: argparse.Namespace) -> None:
             segmentation = parser.predict(image)
             mask = np.isin(segmentation, ids).astype(np.uint8) * 255
             if mask.shape != (image.height, image.width):
-                mask = np.asarray(Image.fromarray(mask).resize(image.size, Image.Resampling.NEAREST))
+                mask = np.asarray(
+                    Image.fromarray(mask).resize(image.size, Image.Resampling.NEAREST)
+                )
             dst.parent.mkdir(parents=True, exist_ok=True)
             Image.fromarray(mask, "L").save(dst)
             made += 1
@@ -154,15 +160,19 @@ def command_report(args: argparse.Namespace) -> None:
         for metric in ("fold_contrast", "micro_energy_ratio", "wrinkle_strength_p90"):
             if gt.get(metric) not in (None, 0) and output.get(metric) is not None:
                 detail_ratio[metric] = float(output[metric] / gt[metric])
-        rows.append({
-            "sample_id": sample_id,
-            "product_id": sample["product_id"],
-            "condition": sample["condition"],
-            "mask_iou": mask_iou(sample["ground_truth"]["mask"], sample["variants"]["vton"]["mask"]),
-            "mean_normalised_error": float(np.mean(normalised)) if normalised else None,
-            "trusted_metric_delta": deltas,
-            "detail_ratio": detail_ratio,
-        })
+        rows.append(
+            {
+                "sample_id": sample_id,
+                "product_id": sample["product_id"],
+                "condition": sample["condition"],
+                "mask_iou": mask_iou(
+                    sample["ground_truth"]["mask"], sample["variants"]["vton"]["mask"]
+                ),
+                "mean_normalised_error": float(np.mean(normalised)) if normalised else None,
+                "trusted_metric_delta": deltas,
+                "detail_ratio": detail_ratio,
+            }
+        )
 
     by_condition: dict[str, list[dict]] = defaultdict(list)
     by_product: dict[str, dict[str, dict]] = defaultdict(dict)
@@ -174,30 +184,42 @@ def command_report(args: argparse.Namespace) -> None:
         conditions[condition] = {
             "n_products": len(values),
             "mask_iou_median": median_or_none([row["mask_iou"] for row in values]),
-            "mean_normalised_error_median": median_or_none([
-                row["mean_normalised_error"] for row in values if row["mean_normalised_error"] is not None
-            ]),
+            "mean_normalised_error_median": median_or_none(
+                [
+                    row["mean_normalised_error"]
+                    for row in values
+                    if row["mean_normalised_error"] is not None
+                ]
+            ),
             "detail_ratio_median": {
-                metric: median_or_none([
-                    row["detail_ratio"][metric] for row in values if metric in row["detail_ratio"]
-                ])
+                metric: median_or_none(
+                    [row["detail_ratio"][metric] for row in values if metric in row["detail_ratio"]]
+                )
                 for metric in ("fold_contrast", "micro_energy_ratio", "wrinkle_strength_p90")
             },
         }
 
     comparisons = {}
-    for candidate, reference in (("m15_g864", "m00_g864"), ("m30_g864", "m00_g864"),
-                                 ("m00_g1008", "m00_g864")):
-        paired = [values for values in by_product.values() if candidate in values and reference in values]
+    for candidate, reference in (
+        ("m15_g864", "m00_g864"),
+        ("m30_g864", "m00_g864"),
+        ("m00_g1008", "m00_g864"),
+    ):
+        paired = [
+            values for values in by_product.values() if candidate in values and reference in values
+        ]
         comparisons[f"{candidate}_minus_{reference}"] = {
             "n_products": len(paired),
-            "mask_iou_delta_median": median_or_none([
-                values[candidate]["mask_iou"] - values[reference]["mask_iou"] for values in paired
-            ]),
-            "normalised_error_delta_median": median_or_none([
-                values[candidate]["mean_normalised_error"] - values[reference]["mean_normalised_error"]
-                for values in paired
-            ]),
+            "mask_iou_delta_median": median_or_none(
+                [values[candidate]["mask_iou"] - values[reference]["mask_iou"] for values in paired]
+            ),
+            "normalised_error_delta_median": median_or_none(
+                [
+                    values[candidate]["mean_normalised_error"]
+                    - values[reference]["mean_normalised_error"]
+                    for values in paired
+                ]
+            ),
         }
 
     report = {

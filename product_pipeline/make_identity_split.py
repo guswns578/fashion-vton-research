@@ -11,6 +11,7 @@ same pixel-density range as train rather than collecting only small/large faces.
 
 Writes to a NEW directory; never mutates the existing dataset files.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -163,9 +164,7 @@ def main() -> None:
 
     if args.verify_sha:
         mismatches = [
-            r["selected_path"]
-            for r in rows
-            if sha256_of(Path(r["selected_path"])) != r["sha256"]
+            r["selected_path"] for r in rows if sha256_of(Path(r["selected_path"])) != r["sha256"]
         ]
         summary["sha256_verified"] = len(rows) - len(mismatches)
         summary["sha256_mismatches"] = mismatches

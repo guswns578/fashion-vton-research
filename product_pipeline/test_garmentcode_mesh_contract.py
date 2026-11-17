@@ -40,8 +40,12 @@ class GarmentCodeMeshContractTests(unittest.TestCase):
 
     def test_harmonic_preclose_spreads_seam_motion_through_each_panel(self) -> None:
         vertices = [
-            [0, 0, 0], [1, 0, 0], [0, 1, 0],
-            [3, 0, 0], [4, 0, 0], [3, 1, 0],
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+            [3, 0, 0],
+            [4, 0, 0],
+            [3, 1, 0],
         ]
         result = harmonic_preclose_vertices(
             vertices,

@@ -1,4 +1,5 @@
 """Run synthetic cloth presets through simulation and the geometry renderer."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,6 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
-
 
 HERE = Path(__file__).resolve().parent
 BLENDER = Path(r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
@@ -120,14 +120,20 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     camera_path = args.camera.resolve() if args.camera else out / "fixed_camera.json"
     if not args.camera:
-        camera_path.write_text(json.dumps({
-            "projection": "orthographic",
-            "location": [0.0, -5.0, 0.03],
-            "target": [0.0, 0.0, 0.03],
-            "ortho_scale": 3.0 if args.garment_kind != "tube" else 2.4,
-            "clip_start": 0.01,
-            "clip_end": 20.0,
-        }, indent=2), encoding="utf-8")
+        camera_path.write_text(
+            json.dumps(
+                {
+                    "projection": "orthographic",
+                    "location": [0.0, -5.0, 0.03],
+                    "target": [0.0, 0.0, 0.03],
+                    "ortho_scale": 3.0 if args.garment_kind != "tube" else 2.4,
+                    "clip_start": 0.01,
+                    "clip_end": 20.0,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
     rows = []
     for preset in args.presets:
@@ -136,16 +142,33 @@ def main() -> None:
         render = root / "render"
         if not args.report_only:
             simulation_command = [
-                str(BLENDER), "--background", "--python", str(HERE / "blender_cloth_sim.py"),
-                "--", "--out", str(simulation), "--preset", preset, "--frames", str(args.frames),
-                "--min-frames", str(args.min_frames),
-                "--settle-consecutive", str(args.settle_consecutive),
-                "--garment-kind", args.garment_kind,
-                "--solver-quality", str(args.solver_quality),
-                "--collision-quality", str(args.collision_quality),
-                "--sewing-force", str(args.sewing_force),
-                "--solver-mass-scale", str(args.solver_mass_scale),
-                "--damping-scale", str(args.damping_scale),
+                str(BLENDER),
+                "--background",
+                "--python",
+                str(HERE / "blender_cloth_sim.py"),
+                "--",
+                "--out",
+                str(simulation),
+                "--preset",
+                preset,
+                "--frames",
+                str(args.frames),
+                "--min-frames",
+                str(args.min_frames),
+                "--settle-consecutive",
+                str(args.settle_consecutive),
+                "--garment-kind",
+                args.garment_kind,
+                "--solver-quality",
+                str(args.solver_quality),
+                "--collision-quality",
+                str(args.collision_quality),
+                "--sewing-force",
+                str(args.sewing_force),
+                "--solver-mass-scale",
+                str(args.solver_mass_scale),
+                "--damping-scale",
+                str(args.damping_scale),
             ]
             if args.pilot:
                 simulation_command.extend(("--pilot", str(args.pilot.resolve())))
@@ -154,7 +177,9 @@ def main() -> None:
             if args.body_mesh:
                 simulation_command.extend(("--body-mesh", str(args.body_mesh.resolve())))
             if args.garmentcode_mesh:
-                simulation_command.extend(("--garmentcode-mesh", str(args.garmentcode_mesh.resolve())))
+                simulation_command.extend(
+                    ("--garmentcode-mesh", str(args.garmentcode_mesh.resolve()))
+                )
             if args.body_scale_unit:
                 simulation_command.extend(("--body-scale-unit", args.body_scale_unit))
             if args.body_alignment:
@@ -170,23 +195,36 @@ def main() -> None:
             run(simulation_command)
         metadata = json.loads((simulation / "simulation_metadata.json").read_text(encoding="utf-8"))
         if not args.report_only:
-            run([
-                sys.executable, str(HERE / "run_geometry_render.py"),
-                "--body", str(simulation / "body.obj"),
-                "--garment", str(simulation / "garment_simulated.obj"),
-                "--camera", str(camera_path),
-                "--out", str(render), "--resolution", args.resolution,
-                "--allow-invalid",
-            ])
+            run(
+                [
+                    sys.executable,
+                    str(HERE / "run_geometry_render.py"),
+                    "--body",
+                    str(simulation / "body.obj"),
+                    "--garment",
+                    str(simulation / "garment_simulated.obj"),
+                    "--camera",
+                    str(camera_path),
+                    "--out",
+                    str(render),
+                    "--resolution",
+                    args.resolution,
+                    "--allow-invalid",
+                ]
+            )
         silhouette_path = render / "garment_silhouette.png"
-        rows.append({
-            "preset": preset,
-            "simulation": metadata,
-            "render_validation": json.loads((render / "render_validation.json").read_text(encoding="utf-8")),
-            "silhouette": str(silhouette_path.resolve()),
-            "normal": str((render / "normal.png").resolve()),
-            "silhouette_stats": silhouette_stats(silhouette_path),
-        })
+        rows.append(
+            {
+                "preset": preset,
+                "simulation": metadata,
+                "render_validation": json.loads(
+                    (render / "render_validation.json").read_text(encoding="utf-8")
+                ),
+                "silhouette": str(silhouette_path.resolve()),
+                "normal": str((render / "normal.png").resolve()),
+                "silhouette_stats": silhouette_stats(silhouette_path),
+            }
+        )
         rows[-1]["accepted"] = bool(
             rows[-1]["simulation"]["settling_drift_m"]["pass"]
             and rows[-1]["render_validation"]["pass"]
@@ -194,16 +232,20 @@ def main() -> None:
 
     comparisons = []
     for index, left in enumerate(rows):
-        for right in rows[index + 1:]:
-            comparisons.append({
-                "left": left["preset"],
-                "right": right["preset"],
-                "silhouette_iou": mask_iou(Path(left["silhouette"]), Path(right["silhouette"])),
-                "normal_mae_on_overlap": normal_mae(
-                    Path(left["normal"]), Path(right["normal"]),
-                    Path(left["silhouette"]), Path(right["silhouette"]),
-                ),
-            })
+        for right in rows[index + 1 :]:
+            comparisons.append(
+                {
+                    "left": left["preset"],
+                    "right": right["preset"],
+                    "silhouette_iou": mask_iou(Path(left["silhouette"]), Path(right["silhouette"])),
+                    "normal_mae_on_overlap": normal_mae(
+                        Path(left["normal"]),
+                        Path(right["normal"]),
+                        Path(left["silhouette"]),
+                        Path(right["silhouette"]),
+                    ),
+                }
+            )
     qc_sheet = out / "qc_sheet.jpg"
     make_qc_sheet(rows, qc_sheet)
     report = {

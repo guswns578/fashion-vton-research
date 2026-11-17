@@ -1,4 +1,5 @@
 """Test whether a future 3D silhouette can select better FASHN candidates."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,6 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-
 
 PROJECT = Path(r"fashion_pipeline")
 BENCHMARK = PROJECT / "out" / "startup_benchmark_v1" / "manifest.json"
@@ -125,12 +125,14 @@ def command_report(args: argparse.Namespace) -> None:
         raise FileNotFoundError(target_mask)
     rows = []
     for name, variant in sample["variants"].items():
-        rows.append({
-            "variant": name,
-            "seed": variant["seed"],
-            "mask_iou": mask_iou(target_mask, variant["mask"]),
-            "image": variant["image"],
-        })
+        rows.append(
+            {
+                "variant": name,
+                "seed": variant["seed"],
+                "mask_iou": mask_iou(target_mask, variant["mask"]),
+                "image": variant["image"],
+            }
+        )
     rows.sort(key=lambda row: (-row["mask_iou"], row["seed"]))
     baseline = next(row for row in rows if row["seed"] == 42)
     best = rows[0]
@@ -153,11 +155,16 @@ def command_report(args: argparse.Namespace) -> None:
     }
     path = args.out / args.report_name
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({
-        "baseline_iou": report["baseline_mask_iou"],
-        "best_iou": report["best_mask_iou"],
-        "improvement": report["oracle_improvement"],
-    }, ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "baseline_iou": report["baseline_mask_iou"],
+                "best_iou": report["best_mask_iou"],
+                "improvement": report["oracle_improvement"],
+            },
+            ensure_ascii=False,
+        )
+    )
     print(path)
 
 

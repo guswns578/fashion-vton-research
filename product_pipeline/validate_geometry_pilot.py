@@ -1,4 +1,5 @@
 """Validate geometry-pilot inputs and report experiment readiness."""
+
 from __future__ import annotations
 
 import argparse
@@ -7,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import jsonschema
-
 
 DEFAULT_ROOT = Path(r"fashion_pipeline/out/geometry_pilot_v1")
 
@@ -54,9 +54,7 @@ def build_readiness_report(root: Path, pilot: dict[str, Any]) -> dict[str, Any]:
         missing_body_mesh_metadata.append("format_supported_by_blender_import")
     capture = pilot["capture"]
     missing_camera = [
-        key
-        for key in ("camera_distance_cm", "focal_length_35mm_eq")
-        if capture.get(key) is None
+        key for key in ("camera_distance_cm", "focal_length_35mm_eq") if capture.get(key) is None
     ]
 
     assets = {
@@ -74,49 +72,60 @@ def build_readiness_report(root: Path, pilot: dict[str, Any]) -> dict[str, Any]:
         "normal": asset_status(root, pilot["geometry_outputs"]["normal"]),
         "render_landmarks": asset_status(root, pilot["geometry_outputs"]["landmarks"]),
         "render_metadata": asset_status(root, pilot["geometry_outputs"]["render_metadata"]),
-        "fashn_candidate_manifest": asset_status(root, pilot["evaluation"]["fashn_candidate_manifest"]),
+        "fashn_candidate_manifest": asset_status(
+            root, pilot["evaluation"]["fashn_candidate_manifest"]
+        ),
     }
     worn_images = [asset_status(root, value) for value in capture["worn_ground_truth_images"]]
     detail_images = [
-        asset_status(root, value)
-        for value in pilot["garment"]["assets"]["detail_closeups"]
+        asset_status(root, value) for value in pilot["garment"]["assets"]["detail_closeups"]
     ]
 
     measurements_ready = body_ok and garment_ok and not missing_material
-    pattern_ready = all((
-        consent_ok,
-        measurements_ready,
-        assets["garment_flat_front"]["exists"],
-        assets["garment_flat_back"]["exists"],
-    ))
-    body_mesh_ready = all((
-        consent_ok,
-        assets["body_mesh"]["exists"],
-        not missing_body_mesh_metadata,
-    ))
+    pattern_ready = all(
+        (
+            consent_ok,
+            measurements_ready,
+            assets["garment_flat_front"]["exists"],
+            assets["garment_flat_back"]["exists"],
+        )
+    )
+    body_mesh_ready = all(
+        (
+            consent_ok,
+            assets["body_mesh"]["exists"],
+            not missing_body_mesh_metadata,
+        )
+    )
     simulation_ready = pattern_ready and body_mesh_ready
-    capture_pair_ready = all((
-        consent_ok,
-        assets["calibration_image"]["exists"],
-        assets["reference_pose_image"]["exists"],
-        bool(worn_images) and all(item["exists"] for item in worn_images),
-        not missing_camera,
-    ))
+    capture_pair_ready = all(
+        (
+            consent_ok,
+            assets["calibration_image"]["exists"],
+            assets["reference_pose_image"]["exists"],
+            bool(worn_images) and all(item["exists"] for item in worn_images),
+            not missing_camera,
+        )
+    )
     render_outputs_ready = all(
         assets[name]["exists"]
         for name in ("garment_silhouette", "depth", "normal", "render_metadata")
     )
     render_ready = simulation_ready and capture_pair_ready
-    silhouette_eval_ready = all((
-        render_ready,
-        render_outputs_ready,
-        assets["real_worn_mask"]["exists"],
-    ))
-    geometry_eval_ready = all((
-        silhouette_eval_ready,
-        assets["real_worn_landmarks"]["exists"],
-        assets["render_landmarks"]["exists"],
-    ))
+    silhouette_eval_ready = all(
+        (
+            render_ready,
+            render_outputs_ready,
+            assets["real_worn_mask"]["exists"],
+        )
+    )
+    geometry_eval_ready = all(
+        (
+            silhouette_eval_ready,
+            assets["real_worn_landmarks"]["exists"],
+            assets["render_landmarks"]["exists"],
+        )
+    )
     selector_ready = geometry_eval_ready and assets["fashn_candidate_manifest"]["exists"]
 
     return {

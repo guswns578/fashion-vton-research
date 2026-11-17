@@ -1,4 +1,5 @@
 """Convert metric body and garment measurements into pilot geometry parameters."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -6,7 +7,6 @@ import json
 import math
 from pathlib import Path
 from typing import Mapping
-
 
 DEFAULT_BODY_CM = {
     "height": 172.0,
@@ -33,7 +33,9 @@ DEFAULT_GARMENT_CM = {
 }
 
 
-def _positive_measurements(values: Mapping[str, object], required: tuple[str, ...], label: str) -> dict[str, float]:
+def _positive_measurements(
+    values: Mapping[str, object], required: tuple[str, ...], label: str
+) -> dict[str, float]:
     result: dict[str, float] = {}
     missing = []
     for name in required:
@@ -59,7 +61,9 @@ def ellipse_radius_x(circumference_m: float, depth_to_width: float = 0.70) -> fl
     return circumference_m / coefficient
 
 
-def vertex_mass_from_gsm(surface_area_m2: float, vertex_count: int, mass_gsm: float) -> tuple[float, float]:
+def vertex_mass_from_gsm(
+    surface_area_m2: float, vertex_count: int, mass_gsm: float
+) -> tuple[float, float]:
     """Return (mass per vertex, total mass) for Blender's vertex-mass setting."""
     if surface_area_m2 <= 0 or vertex_count <= 0 or mass_gsm <= 0:
         raise ValueError("Surface area, vertex count, and GSM must be positive.")
@@ -151,7 +155,9 @@ def body_proxy_from_cm(values: Mapping[str, object]) -> BodyProxy:
     arm_half_length = arm_length * 0.5
     arm_angle_deg = 8.0
     arm_drop = math.sin(math.radians(arm_angle_deg)) * arm_half_length
-    arm_center_x = cm["shoulder_breadth"] / 200.0 + math.cos(math.radians(arm_angle_deg)) * arm_half_length
+    arm_center_x = (
+        cm["shoulder_breadth"] / 200.0 + math.cos(math.radians(arm_angle_deg)) * arm_half_length
+    )
     arm_radius = cm["upper_arm"] / 100.0 / (2 * math.pi)
     return BodyProxy(
         source_cm=cm,
@@ -181,9 +187,13 @@ def panel_pattern_from_cm(values: Mapping[str, object], body: BodyProxy) -> Pane
     armhole = cm["armhole"] / 100.0
 
     if chest_flat * 2 <= body.source_cm["chest"] / 100.0:
-        raise ValueError("Garment circumference must exceed the body chest circumference for this loose-top pilot.")
+        raise ValueError(
+            "Garment circumference must exceed the body chest circumference for this loose-top pilot."
+        )
     if upper_arm_flat * 2 <= body.source_cm["upper_arm"] / 100.0:
-        raise ValueError("Garment upper-arm circumference must exceed the body upper-arm circumference.")
+        raise ValueError(
+            "Garment upper-arm circumference must exceed the body upper-arm circumference."
+        )
 
     shoulder_half = shoulder * 0.5
     chest_half = chest_flat * 0.5
@@ -195,7 +205,7 @@ def panel_pattern_from_cm(values: Mapping[str, object], body: BodyProxy) -> Pane
     neck_depth = min(max(armhole * 0.30, 0.060), 0.110)
     underarm_drop = min(max(armhole * 0.66, upper_arm_flat * 0.70), body_length * 0.42)
     sleeve_drop = min(max(sleeve_length * 0.16, 0.055), sleeve_length * 0.28)
-    sleeve_run = math.sqrt(max(sleeve_length ** 2 - sleeve_drop ** 2, 0.0))
+    sleeve_run = math.sqrt(max(sleeve_length**2 - sleeve_drop**2, 0.0))
     sleeve_end_x = shoulder_half + sleeve_run
     cuff_center_z = shoulder_z - shoulder_drop - sleeve_drop
     cuff_half_height = cuff_flat * 0.5

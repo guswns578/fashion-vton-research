@@ -18,6 +18,7 @@ afterwards protects these pixels exactly, so the detailed face survives VTON.
 Denoise strength is the whole tradeoff -- too low and nothing changes, too high
 and it invents a different person. Sweep it and score, do not guess.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -153,19 +154,21 @@ def main() -> None:
 
             name = f"{path.stem}_detail{strength}"
             out.save(args.out_dir / f"{name}.png")
-            records.append({
-                "source": str(path),
-                "output": str(args.out_dir / f"{name}.png"),
-                "face_box": [x0, y0, x1, y1],
-                "orig_face_height_px": round(face_px, 1),
-                "source_size": list(source_size),
-                "canvas_size": list(base.size),
-                "canvas_scale": args.canvas_scale,
-                "work_size": args.work_size,
-                "strength": strength,
-                "lora": str(args.lora),
-                "lora_scale": args.lora_scale,
-            })
+            records.append(
+                {
+                    "source": str(path),
+                    "output": str(args.out_dir / f"{name}.png"),
+                    "face_box": [x0, y0, x1, y1],
+                    "orig_face_height_px": round(face_px, 1),
+                    "source_size": list(source_size),
+                    "canvas_size": list(base.size),
+                    "canvas_scale": args.canvas_scale,
+                    "work_size": args.work_size,
+                    "strength": strength,
+                    "lora": str(args.lora),
+                    "lora_scale": args.lora_scale,
+                }
+            )
             print(f"[ok] {name}  (face was {face_px:.0f}px -> rendered at {args.work_size})")
 
     (args.out_dir / "detail_manifest.json").write_text(

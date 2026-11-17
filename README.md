@@ -163,6 +163,8 @@ docs/
   third_party_decision.md  상용 라이선스 판단
 ```
 
+> 포트폴리오 공개를 위해 포맷(black)과 쓰지 않는 import만 정리했고 로직은 바꾸지 않았습니다. 정리 전 코드는 [`original-snapshot`](https://github.com/guswns578/fashion-vton-research/tree/original-snapshot) 태그에 있습니다.
+
 ## 역할
 
 평가 지표 설계·검증, 3D 의상 기하 파이프라인, 정체성 LoRA 학습과 합성 파이프라인, 12GB ComfyUI 노드, 질감 리파인과 디자인 보호까지 전 과정을 수행했습니다. 구현에는 AI 코딩 도구를 적극 활용했고, 실험 설계·판단 기준·결과 해석은 직접 수립했습니다.

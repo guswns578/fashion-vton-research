@@ -1,4 +1,5 @@
 """Run the real-body G-C1 geometry gate as a resumable staged pipeline."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,13 +16,10 @@ import jsonschema
 
 from validate_geometry_pilot import build_readiness_report, resolve_asset
 
-
 HERE = Path(__file__).resolve().parent
 DEFAULT_ROOT = Path(r"fashion_pipeline/out/geometry_pilot_v1")
 DEFAULT_BLENDER = Path(r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
-DEFAULT_GARMENTCODE_PYTHON = (
-    HERE.parent / ".venv_garmentcode" / "Scripts" / "python.exe"
-)
+DEFAULT_GARMENTCODE_PYTHON = HERE.parent / ".venv_garmentcode" / "Scripts" / "python.exe"
 STAGES = (
     "pattern",
     "mesh",
@@ -64,9 +62,7 @@ def stage_blockers(stage: str, readiness: dict[str, Any]) -> list[str]:
             if not assets["body_mesh"]["exists"]:
                 blockers.append("missing asset: body_mesh")
             if missing["body_mesh_metadata"]:
-                blockers.append(
-                    "body mesh metadata: " + ", ".join(missing["body_mesh_metadata"])
-                )
+                blockers.append("body mesh metadata: " + ", ".join(missing["body_mesh_metadata"]))
     elif stage == "render":
         if not ready["capture_pair"]:
             for key in ("calibration_image", "reference_pose_image"):
@@ -216,9 +212,7 @@ def main() -> None:
     parser.add_argument("--through-stage", choices=STAGES, default=STAGES[-1])
     parser.add_argument("--resolution-cm", type=float, default=1.4)
     parser.add_argument("--blender", type=Path, default=DEFAULT_BLENDER)
-    parser.add_argument(
-        "--garmentcode-python", type=Path, default=DEFAULT_GARMENTCODE_PYTHON
-    )
+    parser.add_argument("--garmentcode-python", type=Path, default=DEFAULT_GARMENTCODE_PYTHON)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true")
     parser.add_argument(
@@ -263,8 +257,7 @@ def main() -> None:
         "started_at_utc": started_at.isoformat(),
         "attempt_report": str(attempt_report_path),
         "evidence_class": (
-            "orchestration_smoke_only"
-            if args.allow_self_evaluation_smoke else "real_gc1_candidate"
+            "orchestration_smoke_only" if args.allow_self_evaluation_smoke else "real_gc1_candidate"
         ),
         "status": "planned" if args.dry_run else "running",
         "dry_run": args.dry_run,
@@ -281,7 +274,7 @@ def main() -> None:
         },
         "stages": {},
     }
-    planned = STAGES[STAGES.index(args.from_stage): STAGES.index(args.through_stage) + 1]
+    planned = STAGES[STAGES.index(args.from_stage) : STAGES.index(args.through_stage) + 1]
     report["planned_stages"] = list(planned)
 
     initial_blockers = stage_blockers(planned[0], readiness)
@@ -290,13 +283,18 @@ def main() -> None:
         report["stopped_stage"] = planned[0]
         report["blockers"] = initial_blockers
         persist_report()
-        print(json.dumps({
-            "status": report["status"],
-            "stopped_stage": planned[0],
-            "blockers": initial_blockers,
-            "report": str(report_path),
-            "attempt_report": str(attempt_report_path),
-        }, ensure_ascii=False))
+        print(
+            json.dumps(
+                {
+                    "status": report["status"],
+                    "stopped_stage": planned[0],
+                    "blockers": initial_blockers,
+                    "report": str(report_path),
+                    "attempt_report": str(attempt_report_path),
+                },
+                ensure_ascii=False,
+            )
+        )
         return
 
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -357,22 +355,29 @@ def main() -> None:
             if blockers:
                 report.update(status="awaiting_inputs", stopped_stage="body", blockers=blockers)
                 persist_report()
-                print(json.dumps({"status": report["status"], "blockers": blockers}, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {"status": report["status"], "blockers": blockers}, ensure_ascii=False
+                    )
+                )
                 return
             if args.force or not body_preflight_path.exists():
-                report["stages"]["body"] = run_command([
-                    str(args.blender),
-                    "--background",
-                    "--python",
-                    str(HERE / "blender_body_preflight.py"),
-                    "--",
-                    "--body",
-                    str(body_mesh),
-                    "--scale-unit",
-                    body_config["scale_unit"],
-                    "--out",
-                    str(body_preflight_path),
-                ], HERE)
+                report["stages"]["body"] = run_command(
+                    [
+                        str(args.blender),
+                        "--background",
+                        "--python",
+                        str(HERE / "blender_body_preflight.py"),
+                        "--",
+                        "--body",
+                        str(body_mesh),
+                        "--scale-unit",
+                        body_config["scale_unit"],
+                        "--out",
+                        str(body_preflight_path),
+                    ],
+                    HERE,
+                )
             else:
                 report["stages"]["body"] = {"status": "reused"}
             body_preflight = json.loads(body_preflight_path.read_text(encoding="utf-8"))
@@ -404,7 +409,11 @@ def main() -> None:
                 if blockers:
                     report.update(status="awaiting_inputs", stopped_stage=stage, blockers=blockers)
                     persist_report()
-                    print(json.dumps({"status": report["status"], "blockers": blockers}, ensure_ascii=False))
+                    print(
+                        json.dumps(
+                            {"status": report["status"], "blockers": blockers}, ensure_ascii=False
+                        )
+                    )
                     return
                 metadata = output / "simulation_metadata.json"
                 if args.force or not metadata.exists():
@@ -428,17 +437,24 @@ def main() -> None:
             if blockers:
                 report.update(status="awaiting_inputs", stopped_stage="render", blockers=blockers)
                 persist_report()
-                print(json.dumps({"status": report["status"], "blockers": blockers}, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {"status": report["status"], "blockers": blockers}, ensure_ascii=False
+                    )
+                )
                 return
             if args.force or not camera_path.exists():
-                report["stages"]["camera"] = run_command([
-                    sys.executable,
-                    str(HERE / "pilot_camera.py"),
-                    "--pilot",
-                    str(pilot_path),
-                    "--out",
-                    str(camera_path),
-                ], HERE)
+                report["stages"]["camera"] = run_command(
+                    [
+                        sys.executable,
+                        str(HERE / "pilot_camera.py"),
+                        "--pilot",
+                        str(pilot_path),
+                        "--out",
+                        str(camera_path),
+                    ],
+                    HERE,
+                )
             else:
                 report["stages"]["camera"] = {"status": "reused"}
             pilot["capture"]["camera_config"] = relative_or_absolute(root, camera_path)
@@ -478,32 +494,35 @@ def main() -> None:
             if not gravity_validation["pass"]:
                 raise RuntimeError("Gravity render validation did not pass.")
             pilot = json.loads(pilot_path.read_text(encoding="utf-8"))
-            pilot["geometry_outputs"].update({
-                "garment_silhouette": relative_or_absolute(
-                    root, gravity_render / "garment_silhouette.png"
-                ),
-                "depth": relative_or_absolute(root, gravity_render / "depth.png"),
-                "normal": relative_or_absolute(root, gravity_render / "normal.png"),
-                "render_metadata": relative_or_absolute(
-                    root, gravity_render / "render_metadata.json"
-                ),
-            })
-            pilot_path.write_text(
-                json.dumps(pilot, ensure_ascii=False, indent=2), encoding="utf-8"
+            pilot["geometry_outputs"].update(
+                {
+                    "garment_silhouette": relative_or_absolute(
+                        root, gravity_render / "garment_silhouette.png"
+                    ),
+                    "depth": relative_or_absolute(root, gravity_render / "depth.png"),
+                    "normal": relative_or_absolute(root, gravity_render / "normal.png"),
+                    "render_metadata": relative_or_absolute(
+                        root, gravity_render / "render_metadata.json"
+                    ),
+                }
             )
+            pilot_path.write_text(json.dumps(pilot, ensure_ascii=False, indent=2), encoding="utf-8")
 
         if "compare" in planned:
             if args.force or not mechanics_path.exists():
-                report["stages"]["compare"] = run_command([
-                    sys.executable,
-                    str(HERE / "compare_cloth_runs.py"),
-                    "--control",
-                    str(control_dir),
-                    "--gravity",
-                    str(gravity_dir),
-                    "--out",
-                    str(mechanics_path),
-                ], HERE)
+                report["stages"]["compare"] = run_command(
+                    [
+                        sys.executable,
+                        str(HERE / "compare_cloth_runs.py"),
+                        "--control",
+                        str(control_dir),
+                        "--gravity",
+                        str(gravity_dir),
+                        "--out",
+                        str(mechanics_path),
+                    ],
+                    HERE,
+                )
             else:
                 report["stages"]["compare"] = {"status": "reused"}
             mechanics = json.loads(mechanics_path.read_text(encoding="utf-8"))
@@ -516,17 +535,20 @@ def main() -> None:
                 report.update(
                     status="gate_failed",
                     stopped_stage="compare",
-                    blockers=[
-                        name for name, passed in mechanics["checks"].items() if not passed
-                    ],
+                    blockers=[name for name, passed in mechanics["checks"].items() if not passed],
                 )
                 persist_report()
-                print(json.dumps({
-                    "status": report["status"],
-                    "failed_checks": report["blockers"],
-                    "report": str(report_path),
-                    "attempt_report": str(attempt_report_path),
-                }, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {
+                            "status": report["status"],
+                            "failed_checks": report["blockers"],
+                            "report": str(report_path),
+                            "attempt_report": str(attempt_report_path),
+                        },
+                        ensure_ascii=False,
+                    )
+                )
                 return
 
         if "evaluate" in planned:
@@ -537,7 +559,11 @@ def main() -> None:
                 report.update(status="awaiting_inputs", stopped_stage="evaluate", blockers=blockers)
                 report["readiness_after_run"] = readiness
                 persist_report()
-                print(json.dumps({"status": report["status"], "blockers": blockers}, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {"status": report["status"], "blockers": blockers}, ensure_ascii=False
+                    )
+                )
                 return
             if same_resolved_asset(
                 root,
@@ -553,31 +579,37 @@ def main() -> None:
                         ],
                     )
                     persist_report()
-                    print(json.dumps({
-                        "status": report["status"],
-                        "failed_checks": report["blockers"],
-                        "report": str(report_path),
-                        "attempt_report": str(attempt_report_path),
-                    }, ensure_ascii=False))
+                    print(
+                        json.dumps(
+                            {
+                                "status": report["status"],
+                                "failed_checks": report["blockers"],
+                                "report": str(report_path),
+                                "attempt_report": str(attempt_report_path),
+                            },
+                            ensure_ascii=False,
+                        )
+                    )
                     return
                 report.setdefault("warnings", []).append(
                     "Self-evaluation was explicitly allowed. This run proves wiring only, not fit."
                 )
-            report["stages"]["evaluate"] = run_command([
-                sys.executable,
-                str(HERE / "geometry_eval.py"),
-                "--root",
-                str(root),
-                "--pilot",
-                str(pilot_path),
-                "--out",
-                str(run_dir / "geometry_eval.json"),
-                "--overlay",
-                str(run_dir / "geometry_overlay.png"),
-            ], HERE)
-            evaluation = json.loads(
-                (run_dir / "geometry_eval.json").read_text(encoding="utf-8")
+            report["stages"]["evaluate"] = run_command(
+                [
+                    sys.executable,
+                    str(HERE / "geometry_eval.py"),
+                    "--root",
+                    str(root),
+                    "--pilot",
+                    str(pilot_path),
+                    "--out",
+                    str(run_dir / "geometry_eval.json"),
+                    "--overlay",
+                    str(run_dir / "geometry_overlay.png"),
+                ],
+                HERE,
             )
+            evaluation = json.loads((run_dir / "geometry_eval.json").read_text(encoding="utf-8"))
             report["geometry_decision"] = evaluation["decision"]
             if evaluation["decision"]["status"] != "pass":
                 incomplete = evaluation["decision"]["status"] == "incomplete"
@@ -586,19 +618,25 @@ def main() -> None:
                     stopped_stage="evaluate",
                     blockers=(
                         [evaluation["landmarks"].get("reason", "landmark evidence is incomplete")]
-                        if incomplete else ["G-C1 geometry thresholds did not pass"]
+                        if incomplete
+                        else ["G-C1 geometry thresholds did not pass"]
                     ),
                 )
                 report["readiness_after_run"] = build_readiness_report(
                     root, json.loads(pilot_path.read_text(encoding="utf-8"))
                 )
                 persist_report()
-                print(json.dumps({
-                    "status": report["status"],
-                    "geometry_status": evaluation["decision"]["status"],
-                    "report": str(report_path),
-                    "attempt_report": str(attempt_report_path),
-                }, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {
+                            "status": report["status"],
+                            "geometry_status": evaluation["decision"]["status"],
+                            "report": str(report_path),
+                            "attempt_report": str(attempt_report_path),
+                        },
+                        ensure_ascii=False,
+                    )
+                )
                 return
 
         report["status"] = "complete"
@@ -612,11 +650,16 @@ def main() -> None:
         raise
 
     persist_report()
-    print(json.dumps({
-        "status": report["status"],
-        "report": str(report_path),
-        "attempt_report": str(attempt_report_path),
-    }, ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "status": report["status"],
+                "report": str(report_path),
+                "attempt_report": str(attempt_report_path),
+            },
+            ensure_ascii=False,
+        )
+    )
 
 
 if __name__ == "__main__":

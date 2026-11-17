@@ -3,6 +3,7 @@
 Run through Blender, for example:
 blender --background --python blender_geometry_render.py -- --smoke-test --out <dir>
 """
+
 from __future__ import annotations
 
 import argparse
@@ -16,7 +17,7 @@ from mathutils import Vector
 
 
 def script_args() -> list[str]:
-    return sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    return sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 
 
 def clear_scene() -> None:

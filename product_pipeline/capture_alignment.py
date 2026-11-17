@@ -1,4 +1,5 @@
 """Check fixed-camera pose alignment for paired VTON pilot captures."""
+
 from __future__ import annotations
 
 import argparse
@@ -11,18 +12,43 @@ import cv2
 import numpy as np
 from PIL import Image
 
-
 DEFAULT_ROOT = Path(r"fashion_pipeline/out/geometry_pilot_v1")
 FASHN_SRC = Path(r"C:\Dev\fashn-vton-1.5\src")
 DWPOSE_WEIGHTS = Path(r"C:\Dev\fashn-vton-1.5\weights\dwpose")
 BODY_NAMES = (
-    "nose", "neck", "shoulder_r", "elbow_r", "wrist_r", "shoulder_l",
-    "elbow_l", "wrist_l", "hip_r", "knee_r", "ankle_r", "hip_l",
-    "knee_l", "ankle_l", "eye_r", "eye_l", "ear_r", "ear_l",
+    "nose",
+    "neck",
+    "shoulder_r",
+    "elbow_r",
+    "wrist_r",
+    "shoulder_l",
+    "elbow_l",
+    "wrist_l",
+    "hip_r",
+    "knee_r",
+    "ankle_r",
+    "hip_l",
+    "knee_l",
+    "ankle_l",
+    "eye_r",
+    "eye_l",
+    "ear_r",
+    "ear_l",
 )
 CORE_NAMES = {
-    "neck", "shoulder_r", "elbow_r", "wrist_r", "shoulder_l", "elbow_l",
-    "wrist_l", "hip_r", "knee_r", "ankle_r", "hip_l", "knee_l", "ankle_l",
+    "neck",
+    "shoulder_r",
+    "elbow_r",
+    "wrist_r",
+    "shoulder_l",
+    "elbow_l",
+    "wrist_l",
+    "hip_r",
+    "knee_r",
+    "ankle_r",
+    "hip_l",
+    "knee_l",
+    "ankle_l",
 }
 
 
@@ -38,7 +64,7 @@ def extract_body_points(pose: dict[str, Any]) -> dict[str, tuple[float, float]]:
     subset = np.asarray(pose["bodies"]["subset"])
     if candidate.shape[0] < len(BODY_NAMES) or subset.size < len(BODY_NAMES):
         return {}
-    visibility = subset.reshape(-1)[:len(BODY_NAMES)] >= 0
+    visibility = subset.reshape(-1)[: len(BODY_NAMES)] >= 0
     result = {}
     for index, name in enumerate(BODY_NAMES):
         x, y = candidate[index, :2]
@@ -62,11 +88,13 @@ def compare_points(
         rx, ry = reference[name]
         wx, wy = worn[name]
         distance_px = float(np.hypot((rx - wx) * width, (ry - wy) * height))
-        rows.append({
-            "name": name,
-            "distance_px": distance_px,
-            "distance_image_height_ratio": distance_px / height,
-        })
+        rows.append(
+            {
+                "name": name,
+                "distance_px": distance_px,
+                "distance_image_height_ratio": distance_px / height,
+            }
+        )
     ratios = [row["distance_image_height_ratio"] for row in rows]
     if not ratios:
         return {
@@ -96,6 +124,7 @@ def compare_points(
 def load_pose_detector(device: str):
     sys.path.insert(0, str(FASHN_SRC))
     from fashn_vton.dwpose import DWposeDetector
+
     return DWposeDetector(checkpoints_dir=str(DWPOSE_WEIGHTS), device=device)
 
 
@@ -115,6 +144,7 @@ def save_pose_overlay(
 ) -> None:
     sys.path.insert(0, str(FASHN_SRC))
     from fashn_vton.dwpose import draw_pose
+
     ref = draw_pose(reference_pose, height, width, grayscale=True) > 0
     worn = draw_pose(worn_pose, height, width, grayscale=True) > 0
     canvas = np.full((height, width, 3), 24, dtype=np.uint8)

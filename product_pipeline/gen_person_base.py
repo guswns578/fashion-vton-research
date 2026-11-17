@@ -16,6 +16,7 @@ same harness generates identity-locked bases with no other change.
 Every image is written with a sidecar JSON recording model, LoRA, template, seed,
 steps, guidance, resolution and output sha256, so any base can be regenerated.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -121,7 +122,15 @@ class Template:
     def prompt(self, inner: str = "tee", identity_token: str = "") -> str:
         subject = IDENTITY_SUBJECT.format(tok=identity_token) if identity_token else SUBJECT
         return ", ".join(
-            [subject, self.pose, NEUTRAL_INNERS[inner], self.camera, self.scene, self.light, QUALITY]
+            [
+                subject,
+                self.pose,
+                NEUTRAL_INNERS[inner],
+                self.camera,
+                self.scene,
+                self.light,
+                QUALITY,
+            ]
         )
 
 
@@ -253,16 +262,10 @@ def encode_long_prompt(pipe, prompt: str, negative: str, device: str):
     tokenizers = [pipe.tokenizer, pipe.tokenizer_2]
     encoders = [pipe.text_encoder, pipe.text_encoder_2]
 
-    n_chunks = max(
-        len(_chunk_ids(tok, text))
-        for tok in tokenizers
-        for text in (prompt, negative)
-    )
+    n_chunks = max(len(_chunk_ids(tok, text)) for tok in tokenizers for text in (prompt, negative))
 
     def encode(text: str):
-        per_encoder_chunks = [
-            _chunk_ids(tok, text, n_chunks) for tok in tokenizers
-        ]
+        per_encoder_chunks = [_chunk_ids(tok, text, n_chunks) for tok in tokenizers]
         seq_parts, pooled = [], None
         for idx in range(n_chunks):
             hidden = []
@@ -336,7 +339,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-dir", type=Path, required=True)
     ap.add_argument("--model", type=Path, default=DEFAULT_MODEL)
-    ap.add_argument("--lora", type=Path, default=None, help="identity LoRA (optional, not yet trained)")
+    ap.add_argument(
+        "--lora", type=Path, default=None, help="identity LoRA (optional, not yet trained)"
+    )
     ap.add_argument("--lora-scale", type=float, default=0.8)
     ap.add_argument("--identity-token", default="", help="trigger token prepended to the prompt")
     ap.add_argument(

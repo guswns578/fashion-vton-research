@@ -33,7 +33,9 @@ class GarmentCodeAdapterTests(unittest.TestCase):
                 "end_width": {"v": 1.0},
             },
         }
-        mapped, _ = design_overrides(design, DEFAULT_BODY_CM, DEFAULT_GARMENT_CM, {"waist_line": 44.0})
+        mapped, _ = design_overrides(
+            design, DEFAULT_BODY_CM, DEFAULT_GARMENT_CM, {"waist_line": 44.0}
+        )
         self.assertAlmostEqual(mapped["shirt"]["width"]["v"], 110 / 92)
         self.assertAlmostEqual(mapped["shirt"]["length"]["v"], 70 / 44)
         self.assertEqual(mapped["sleeve"]["length"]["v"], 1.0)
@@ -58,7 +60,9 @@ class GarmentCodeAdapterTests(unittest.TestCase):
             "cuff_flat": 10.0,
             "hem_flat": 66.0,
         }
-        update_calibration(design, {"waist_line": 44.0, "arm_length": 60.0}, DEFAULT_GARMENT_CM, realized)
+        update_calibration(
+            design, {"waist_line": 44.0, "arm_length": 60.0}, DEFAULT_GARMENT_CM, realized
+        )
         self.assertAlmostEqual(design["shirt"]["width"]["v"], 1.1)
         self.assertAlmostEqual(design["shirt"]["flare"]["v"], 1.2 * 55 / 66 / (55 / 60))
         self.assertTrue(design["sleeve"]["standing_shoulder"]["v"])

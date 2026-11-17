@@ -1,10 +1,10 @@
 """Generate a synthetic person and prepare the G-B generated-person VTON gate."""
+
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
-
 
 MODEL = Path(r"C:\Dev\StabilityMatrix\Data\Models\StableDiffusion\RealVisXL_V5.0_fp16.safetensors")
 BENCHMARK = Path(r"fashion_pipeline/out/startup_benchmark_v1/manifest.json")
@@ -82,24 +82,34 @@ def command_build(args: argparse.Namespace) -> None:
         "protocol": "operational_gate_without_counterfactual_ground_truth",
         "warning": "This gate tests pipeline compatibility, not garment fit accuracy.",
         "counts": {"products": 1, "observations": 1},
-        "samples": [{
-            "sample_id": sample_id,
-            "product_id": args.sku,
-            "person": str(person),
-            "garment": str(garment),
-            "ground_truth": {
-                "image": str(person),
-                "mask": str((args.out / "masks" / "ground_truth" / f"{sample_id}.png").resolve()),
-            },
-            "variants": {
-                "fashn": {
-                    "raw": str((args.out / "variants" / "fashn_raw" / f"{sample_id}.png").resolve()),
-                    "image": str((args.out / "variants" / "fashn" / f"{sample_id}.png").resolve()),
-                    "mask": str((args.out / "masks" / "fashn" / f"{sample_id}.png").resolve()),
-                    "change_mask": str((args.out / "masks" / "fashn_change" / f"{sample_id}.png").resolve()),
-                }
-            },
-        }],
+        "samples": [
+            {
+                "sample_id": sample_id,
+                "product_id": args.sku,
+                "person": str(person),
+                "garment": str(garment),
+                "ground_truth": {
+                    "image": str(person),
+                    "mask": str(
+                        (args.out / "masks" / "ground_truth" / f"{sample_id}.png").resolve()
+                    ),
+                },
+                "variants": {
+                    "fashn": {
+                        "raw": str(
+                            (args.out / "variants" / "fashn_raw" / f"{sample_id}.png").resolve()
+                        ),
+                        "image": str(
+                            (args.out / "variants" / "fashn" / f"{sample_id}.png").resolve()
+                        ),
+                        "mask": str((args.out / "masks" / "fashn" / f"{sample_id}.png").resolve()),
+                        "change_mask": str(
+                            (args.out / "masks" / "fashn_change" / f"{sample_id}.png").resolve()
+                        ),
+                    }
+                },
+            }
+        ],
     }
     path = args.out / "manifest.json"
     path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

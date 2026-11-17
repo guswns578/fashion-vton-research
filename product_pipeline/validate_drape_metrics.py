@@ -7,6 +7,7 @@ The report answers two questions before a metric is used as a gate:
 2. Is that movement larger than the previously measured codec/resampling/mask
    noise floor?
 """
+
 from __future__ import annotations
 
 import argparse
@@ -114,7 +115,12 @@ def validate(manifest_path: Path, size: int = 384, limit: int = 0) -> dict[str, 
         for radius in blur_radii:
             variant = image if radius == 0 else image.filter(ImageFilter.GaussianBlur(radius))
             blur_metrics.append(measure_image(variant, mask, size=size))
-        for metric in ("fold_contrast", "wrinkle_strength_p90", "meso_energy_ratio", "micro_energy_ratio"):
+        for metric in (
+            "fold_contrast",
+            "wrinkle_strength_p90",
+            "meso_energy_ratio",
+            "micro_energy_ratio",
+        ):
             blur_rows[metric].append([float(row[metric]) for row in blur_metrics])
         processed.append(sample.get("sample_id", ""))
 
@@ -130,10 +136,8 @@ def validate(manifest_path: Path, size: int = 384, limit: int = 0) -> dict[str, 
             monotonic = _monotonic_rate(values, increasing)
             snr = None if floor in (None, 0) or signal is None else signal / floor
             above_noise = bool(
-                signal is not None and (
-                    (floor == 0 and signal > 0)
-                    or (snr is not None and snr >= 3.0)
-                )
+                signal is not None
+                and ((floor == 0 and signal > 0) or (snr is not None and snr >= 3.0))
             )
             result[metric] = {
                 "n": len(values),
@@ -145,7 +149,9 @@ def validate(manifest_path: Path, size: int = 384, limit: int = 0) -> dict[str, 
                 "passes_default_gate": bool(
                     monotonic is not None and monotonic >= 0.80 and above_noise
                 ),
-                "median_curve": [float(np.median([row[i] for row in values])) for i in range(len(values[0]))],
+                "median_curve": [
+                    float(np.median([row[i] for row in values])) for i in range(len(values[0]))
+                ],
             }
         return result
 

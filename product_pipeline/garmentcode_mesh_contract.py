@@ -1,4 +1,5 @@
 """Convert a GarmentCode sewing specification into a Blender cloth mesh contract."""
+
 from __future__ import annotations
 
 import argparse
@@ -41,7 +42,10 @@ def _point_segment_distance(point, start, end) -> float:
 
 
 def point_in_polygon(point, polygon) -> bool:
-    if any(_point_on_segment(point, left, right) for left, right in zip(polygon, polygon[1:] + polygon[:1])):
+    if any(
+        _point_on_segment(point, left, right)
+        for left, right in zip(polygon, polygon[1:] + polygon[:1])
+    ):
         return True
     x, y = point
     inside = False
@@ -81,7 +85,9 @@ def edge_segment_counts(pattern: dict, resolution_cm: float) -> dict[tuple[str, 
     counts = {}
     for panel_name, panel in pattern["panels"].items():
         for edge_index in range(len(panel["edges"])):
-            counts[(panel_name, edge_index)] = max(2, math.ceil(edge_length(panel, edge_index) / resolution_cm))
+            counts[(panel_name, edge_index)] = max(
+                2, math.ceil(edge_length(panel, edge_index) / resolution_cm)
+            )
     for stitch in pattern.get("stitches", []):
         left, right = stitch[:2]
         left_key = (left["panel"], left["edge"])
@@ -91,11 +97,14 @@ def edge_segment_counts(pattern: dict, resolution_cm: float) -> dict[tuple[str, 
     return counts
 
 
-def preclose_vertices(vertices, sewing_edges, maximum_pair_distance_m: float | None = None) -> list[list[float]]:
+def preclose_vertices(
+    vertices, sewing_edges, maximum_pair_distance_m: float | None = None
+) -> list[list[float]]:
     """Move every stitched vertex group to one start point without welding topology."""
     closed = np.asarray(vertices, dtype=float).copy()
     active_edges = [
-        pair for pair in sewing_edges
+        pair
+        for pair in sewing_edges
         if maximum_pair_distance_m is None
         or np.linalg.norm(closed[pair[0]] - closed[pair[1]]) <= maximum_pair_distance_m
     ]
@@ -187,9 +196,7 @@ def structural_edge_ratios(vertices, rest_vertices, faces) -> np.ndarray:
     current = np.asarray(vertices, dtype=float)
     rest = np.asarray(rest_vertices, dtype=float)
     rest_lengths = np.linalg.norm(rest[edge_array[:, 1]] - rest[edge_array[:, 0]], axis=1)
-    current_lengths = np.linalg.norm(
-        current[edge_array[:, 1]] - current[edge_array[:, 0]], axis=1
-    )
+    current_lengths = np.linalg.norm(current[edge_array[:, 1]] - current[edge_array[:, 0]], axis=1)
     return current_lengths / np.maximum(rest_lengths, 1e-12)
 
 
@@ -234,12 +241,9 @@ def relax_preclosed_vertices(
     for _ in range(iterations):
         difference = result[edge_array[:, 1]] - result[edge_array[:, 0]]
         lengths = np.linalg.norm(difference, axis=1)
-        correction = (
-            0.5
-            * relaxation
-            * (lengths - rest_lengths)
-            / np.maximum(lengths, 1e-12)
-        )[:, None] * difference
+        correction = (0.5 * relaxation * (lengths - rest_lengths) / np.maximum(lengths, 1e-12))[
+            :, None
+        ] * difference
         delta = np.zeros_like(result)
         degree = np.zeros(len(result), dtype=float)
         np.add.at(delta, edge_array[:, 0], correction)
@@ -367,10 +371,14 @@ def body_surface_start_vertices(
         for region in ("f", "b"):
             panel = pattern["panels"][f"{side}_{region}torso"]
             torso_widths[(side, region)] = max(abs(point[0]) for point in panel["vertices"])
-    garment_circumference_m = 2.0 * (
-        np.mean([torso_widths[(side, "f")] for side in ("right", "left")])
-        + np.mean([torso_widths[(side, "b")] for side in ("right", "left")])
-    ) / 100.0
+    garment_circumference_m = (
+        2.0
+        * (
+            np.mean([torso_widths[(side, "f")] for side in ("right", "left")])
+            + np.mean([torso_widths[(side, "b")] for side in ("right", "left")])
+        )
+        / 100.0
+    )
     scale = garment_circumference_m / _ellipse_circumference(
         body.torso_radius_x_m, body.torso_radius_y_m
     )
@@ -386,13 +394,21 @@ def body_surface_start_vertices(
             back_width = torso_widths[("right" if side_sign < 0 else "left", "b")]
             total = front_width + back_width
             for index, point in enumerate(points, start=begin):
-                distance = abs(point[0]) if "ftorso" in panel_name else front_width + back_width - abs(point[0])
+                distance = (
+                    abs(point[0])
+                    if "ftorso" in panel_name
+                    else front_width + back_width - abs(point[0])
+                )
                 theta = _ellipse_theta(radius_x, radius_y, distance / total)
                 start[index][0] = side_sign * radius_x * math.sin(theta)
                 start[index][1] = -radius_y * math.cos(theta)
             continue
 
-        counterpart_name = panel_name.replace("sleeve_f", "sleeve_b") if "sleeve_f" in panel_name else panel_name.replace("sleeve_b", "sleeve_f")
+        counterpart_name = (
+            panel_name.replace("sleeve_f", "sleeve_b")
+            if "sleeve_f" in panel_name
+            else panel_name.replace("sleeve_b", "sleeve_f")
+        )
         counterpart = pattern["panels"][counterpart_name]
         is_front = "sleeve_f" in panel_name
         for index, point in enumerate(points, start=begin):
@@ -521,7 +537,11 @@ def build_contract(
         panel_offset = arm_panel_offset_m if "sleeve" in panel_name else torso_panel_offset_m
         depth_override = None
         if panel_offset is not None:
-            depth_override = -panel_offset if ("ftorso" in panel_name or "sleeve_f" in panel_name) else panel_offset
+            depth_override = (
+                -panel_offset
+                if ("ftorso" in panel_name or "sleeve_f" in panel_name)
+                else panel_offset
+            )
         vertices.extend(
             _to_blender(point, panel, vertical_shift_m, depth_override) for point in local_points
         )
@@ -543,7 +563,9 @@ def build_contract(
         panel_data[panel_name] = {
             "vertices": len(local_points),
             "faces": len(local_faces),
-            "boundary_vertices": sum(counts[(panel_name, index)] for index in range(len(panel["edges"]))),
+            "boundary_vertices": sum(
+                counts[(panel_name, index)] for index in range(len(panel["edges"]))
+            ),
             "outward_side": "back_+Y" if is_back_panel else "front_-Y",
             "mean_face_normal": np.mean(normals, axis=0).tolist(),
         }
@@ -557,8 +579,7 @@ def build_contract(
         if "torso" not in panel_name:
             continue
         armhole_edges = [
-            index for index, edge in enumerate(panel["edges"])
-            if "armhole" in edge.get("label", "")
+            index for index, edge in enumerate(panel["edges"]) if "armhole" in edge.get("label", "")
         ]
         if len(armhole_edges) != 1:
             raise ValueError(f"Expected one labeled armhole edge on {panel_name}")
@@ -578,14 +599,22 @@ def build_contract(
             raise ValueError(f"Stitch {stitch_index} vertex counts differ")
         expected_reverse = not (len(stitch) == 3 and stitch[-1] == "right_wrong")
         vertex_array = np.asarray(vertices, dtype=float)
-        forward_mean = float(np.mean([
-            np.linalg.norm(vertex_array[left_id] - vertex_array[right_id])
-            for left_id, right_id in zip(left_ids, right_ids)
-        ]))
-        reverse_mean = float(np.mean([
-            np.linalg.norm(vertex_array[left_id] - vertex_array[right_id])
-            for left_id, right_id in zip(left_ids, reversed(right_ids))
-        ]))
+        forward_mean = float(
+            np.mean(
+                [
+                    np.linalg.norm(vertex_array[left_id] - vertex_array[right_id])
+                    for left_id, right_id in zip(left_ids, right_ids)
+                ]
+            )
+        )
+        reverse_mean = float(
+            np.mean(
+                [
+                    np.linalg.norm(vertex_array[left_id] - vertex_array[right_id])
+                    for left_id, right_id in zip(left_ids, reversed(right_ids))
+                ]
+            )
+        )
         reverse = reverse_mean < forward_mean
         if reverse:
             right_ids = list(reversed(right_ids))
@@ -595,22 +624,26 @@ def build_contract(
             pair = tuple(sorted((left_id, right_id)))
             sewing_edges.add(pair)
             pairs.append(list(pair))
-            initial_distances.append(float(np.linalg.norm(vertex_array[left_id] - vertex_array[right_id])))
-        stitch_contract.append({
-            "stitch": stitch_index,
-            "sides": [left, right],
-            "vertex_pairs": len(pairs),
-            "reverse_second": reverse,
-            "garmentcode_expected_reverse": expected_reverse,
-            "orientation_changed": reverse != expected_reverse,
-            "forward_mean_distance_m": forward_mean,
-            "reverse_mean_distance_m": reverse_mean,
-            "chosen_initial_distance_m": {
-                "mean": float(np.mean(initial_distances)),
-                "maximum": float(np.max(initial_distances)),
-            },
-            "pairs": pairs,
-        })
+            initial_distances.append(
+                float(np.linalg.norm(vertex_array[left_id] - vertex_array[right_id]))
+            )
+        stitch_contract.append(
+            {
+                "stitch": stitch_index,
+                "sides": [left, right],
+                "vertex_pairs": len(pairs),
+                "reverse_second": reverse,
+                "garmentcode_expected_reverse": expected_reverse,
+                "orientation_changed": reverse != expected_reverse,
+                "forward_mean_distance_m": forward_mean,
+                "reverse_mean_distance_m": reverse_mean,
+                "chosen_initial_distance_m": {
+                    "mean": float(np.mean(initial_distances)),
+                    "maximum": float(np.max(initial_distances)),
+                },
+                "pairs": pairs,
+            }
+        )
 
     source_sewing_edges = sorted(sewing_edges)
     uses_predrape = preclose_seams or weld_relaxed_preclose
@@ -647,9 +680,7 @@ def build_contract(
             sewing_edges = set()
             seam_mode = "welded_relaxed_predrape_with_rest_shape"
         else:
-            components = {
-                name: {"vertex_range": bounds} for name, bounds in components.items()
-            }
+            components = {name: {"vertex_range": bounds} for name, bounds in components.items()}
             seam_mode = "preclosed_duplicate_vertices_with_rest_shape"
     elif weld_seams:
         vertices, _, faces, components, attachment_vertices = weld_mesh_topology(
@@ -663,9 +694,7 @@ def build_contract(
         sewing_edges = set()
         seam_mode = "welded_shared_vertices"
     else:
-        components = {
-            name: {"vertex_range": bounds} for name, bounds in components.items()
-        }
+        components = {name: {"vertex_range": bounds} for name, bounds in components.items()}
         seam_mode = "open_blender_sewing_springs"
 
     return {
@@ -702,18 +731,28 @@ def build_contract(
                 "iterations": 1600,
                 "relaxation": 0.8,
                 "tether": 1e-5,
-                "harmonic_edge_ratio_p01_p99": [
-                    float(np.percentile(harmonic_ratios, 1)),
-                    float(np.percentile(harmonic_ratios, 99)),
-                ] if uses_predrape else None,
-                "relaxed_edge_ratio_p01_p99": [
-                    float(np.percentile(relaxed_ratios, 1)),
-                    float(np.percentile(relaxed_ratios, 99)),
-                ] if uses_predrape else None,
-                "harmonic_edges_over_1_5x": int((harmonic_ratios > 1.5).sum())
-                if uses_predrape else None,
-                "relaxed_edges_over_1_5x": int((relaxed_ratios > 1.5).sum())
-                if uses_predrape else None,
+                "harmonic_edge_ratio_p01_p99": (
+                    [
+                        float(np.percentile(harmonic_ratios, 1)),
+                        float(np.percentile(harmonic_ratios, 99)),
+                    ]
+                    if uses_predrape
+                    else None
+                ),
+                "relaxed_edge_ratio_p01_p99": (
+                    [
+                        float(np.percentile(relaxed_ratios, 1)),
+                        float(np.percentile(relaxed_ratios, 99)),
+                    ]
+                    if uses_predrape
+                    else None
+                ),
+                "harmonic_edges_over_1_5x": (
+                    int((harmonic_ratios > 1.5).sum()) if uses_predrape else None
+                ),
+                "relaxed_edges_over_1_5x": (
+                    int((relaxed_ratios > 1.5).sum()) if uses_predrape else None
+                ),
             },
         },
         "summary": {
@@ -748,9 +787,7 @@ def main() -> None:
         torso_panel_offset_m=body.torso_radius_y_m + 0.02,
         arm_panel_offset_m=body.arm_radius_m + 0.015,
         weld_seams=not (
-            args.leave_seams_open
-            or args.preclose_with_rest_shape
-            or args.weld_relaxed_preclose
+            args.leave_seams_open or args.preclose_with_rest_shape or args.weld_relaxed_preclose
         ),
         preclose_seams=args.preclose_with_rest_shape,
         weld_relaxed_preclose=args.weld_relaxed_preclose,

@@ -1,4 +1,5 @@
 """Build a perspective Blender camera contract from fixed smartphone capture metadata."""
+
 from __future__ import annotations
 
 import argparse
@@ -8,7 +9,6 @@ from pathlib import Path
 from PIL import Image
 
 from measurement_geometry import load_pilot_geometry
-
 
 FOCAL_35MM_EXIF_TAG = 41989
 
@@ -81,7 +81,9 @@ def main() -> None:
     distance = capture.get("camera_distance_cm")
     focal = capture.get("focal_length_35mm_eq") or focal_from_exif(reference)
     if distance is None or focal is None:
-        raise ValueError("camera_distance_cm and focal_length_35mm_eq (or matching EXIF) are required.")
+        raise ValueError(
+            "camera_distance_cm and focal_length_35mm_eq (or matching EXIF) are required."
+        )
     body, pattern, _ = load_pilot_geometry(pilot_path)
     camera = build_camera(
         body.source_cm["height"],
